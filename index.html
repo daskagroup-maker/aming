@@ -2423,7 +2423,18 @@ function renderCustomList(brand) {
         const boxTypeTargetName = p.boxTypeId ? (data.products.find(bp => bp.id === p.boxTypeId)?.name || '（找不到）') : null;
         const effectiveBoxId = p.boxTypeId || p.id;
         const currentBoxStock = data.boxStocks[effectiveBoxId] != null ? data.boxStocks[effectiveBoxId] : null;
-        const boxStockDisplay = currentBoxStock != null ? `目前 ${currentBoxStock} 箱` : '尚未設定庫存';
+        let boxStockDisplay;
+        if (currentBoxStock == null) {
+            boxStockDisplay = '尚未設定庫存';
+        } else if (p.fixedQty > 0) {
+            // 有填「指定量」時，直接預覽：這個指定量會用掉幾箱、用掉後這個箱型還剩多少
+            // （僅為單一商品本身的預覽，若還有其他商品共用同一箱型，實際剩餘會在按下「分配」後以加總結果為準）
+            const previewBoxes = Math.floor(p.fixedQty / p.boxSize);
+            const previewRemain = currentBoxStock - previewBoxes;
+            boxStockDisplay = `目前 ${currentBoxStock} 箱・指定 ${p.fixedQty} 後用 ${previewBoxes} 箱・剩 ${previewRemain} 箱`;
+        } else {
+            boxStockDisplay = `目前 ${currentBoxStock} 箱`;
+        }
         const boxTypeBadge = boxTypeTargetName
             ? `<span style="font-family:var(--mono);font-size:9px;color:var(--gold);">📦 共用「${boxTypeTargetName}」的箱子庫存（${boxStockDisplay}）</span>`
             : `<span style="font-family:var(--mono);font-size:9px;color:#999;">📦 獨立箱型（${boxStockDisplay}）</span>`;
@@ -2477,6 +2488,7 @@ function updateCustomPrio(cid, val, brand) {
 function updateCustomFixed(cid, val, brand) {
     const p = BRAND_DATA[brand].customProducts.find(x => x.id === cid);
     if (p) p.fixedQty = parseInt(val) || 0;
+    renderCustomList(brand);
 }
 
 function getStocks(brand) {
@@ -3073,13 +3085,13 @@ function loadState() {
                     }
                 });
             }
+            if (saved.boxStocks) {
+                data.boxStocks = saved.boxStocks;
+            }
             if (saved.customProducts) {
                 data.customProducts = saved.customProducts;
                 data.customIdCounter = saved.customIdCounter || 0;
                 renderCustomList(brand);
-            }
-            if (saved.boxStocks) {
-                data.boxStocks = saved.boxStocks;
             }
             renderBoxStockGrid(brand);
             if (saved.customHistory) {

@@ -359,6 +359,8 @@
         .plan-box-stock.warn { color: var(--warn); font-weight: 700; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -376,7 +378,12 @@
                 <button class="brand-btn" id="brand-btn-yt" onclick="switchBrand('yt')">YT</button>
                 <button class="brand-btn" id="brand-btn-le" onclick="switchBrand('le')">LE</button>
             </div>
-            <span style="font-family:var(--mono);font-size:9px;color:#555;letter-spacing:1px;">// AUTO-SAVE ON</span>
+            <span id="sync-status-indicator" style="font-family:var(--mono);font-size:9px;color:#555;letter-spacing:1px;">// AUTO-SAVE ON</span>
+            <button onclick="exportFullBackup()" style="font-family:var(--mono);font-size:10px;padding:5px 10px;background:transparent;border:1px solid #444;color:#888;border-radius:2px;cursor:pointer;letter-spacing:1px;" onmouseover="this.style.borderColor='#2a7d4f';this.style.color='#2a7d4f'" onmouseout="this.style.borderColor='#444';this.style.color='#888'" title="把目前所有資料匯出成一個檔案，可傳到其他裝置匯入">⬇ 匯出備份</button>
+            <label style="font-family:var(--mono);font-size:10px;padding:5px 10px;background:transparent;border:1px solid #444;color:#888;border-radius:2px;cursor:pointer;letter-spacing:1px;" onmouseover="this.style.borderColor='#2b6cb0';this.style.color='#2b6cb0'" onmouseout="this.style.borderColor='#444';this.style.color='#888'" title="從其他裝置匯出的備份檔案還原資料">
+                ⬆ 匯入備份
+                <input type="file" accept=".json" style="display:none;" onchange="importFullBackup(this)">
+            </label>
             <button onclick="clearState()" style="font-family:var(--mono);font-size:10px;padding:5px 10px;background:transparent;border:1px solid #444;color:#888;border-radius:2px;cursor:pointer;letter-spacing:1px;" onmouseover="this.style.borderColor='#b5451b';this.style.color='#b5451b'" onmouseout="this.style.borderColor='#444';this.style.color='#888'">↺ RESET</button>
         </div>
     </div>
@@ -2388,6 +2395,35 @@ function clearHistoryWithConfirm(btn) {
     clearHistory();
 }
 
+// 計算「同一個箱型」被哪些商品（含預設+自訂）以指定量方式一起使用，加總起來的預估用箱量
+// 預設商品的指定量是即時讀 DOM（因為預設商品本身沒有固定存 fixedQty 屬性），自訂商品則讀物件上的 fixedQty
+function getBoxTypeFixedUsage(brand, effectiveBoxId) {
+    const data = BRAND_DATA[brand];
+    let totalBoxes = 0;
+    const contributors = [];
+
+    data.products.forEach(pr => {
+        const eid = pr.boxTypeId || pr.id;
+        if (eid !== effectiveBoxId) return;
+        const fixedEl = document.getElementById(`fixed-${pr.id}-${brand}`);
+        const fixedQty = fixedEl ? (parseInt(fixedEl.value) || 0) : 0;
+        if (fixedQty > 0) {
+            const boxes = Math.floor(fixedQty / pr.boxSize);
+            if (boxes > 0) { totalBoxes += boxes; contributors.push({ name: pr.name, boxes }); }
+        }
+    });
+    data.customProducts.forEach(pr => {
+        const eid = pr.boxTypeId || pr.id;
+        if (eid !== effectiveBoxId) return;
+        if (pr.fixedQty > 0) {
+            const boxes = Math.floor(pr.fixedQty / pr.boxSize);
+            if (boxes > 0) { totalBoxes += boxes; contributors.push({ name: pr.name, boxes }); }
+        }
+    });
+
+    return { totalBoxes, contributors };
+}
+
 function renderCustomList(brand) {
     const data = BRAND_DATA[brand];
     const prefix = data.imgPrefix;
@@ -2426,14 +2462,18 @@ function renderCustomList(brand) {
         let boxStockDisplay;
         if (currentBoxStock == null) {
             boxStockDisplay = '尚未設定庫存';
-        } else if (p.fixedQty > 0) {
-            // 有填「指定量」時，直接預覽：這個指定量會用掉幾箱、用掉後這個箱型還剩多少
-            // （僅為單一商品本身的預覽，若還有其他商品共用同一箱型，實際剩餘會在按下「分配」後以加總結果為準）
-            const previewBoxes = Math.floor(p.fixedQty / p.boxSize);
-            const previewRemain = currentBoxStock - previewBoxes;
-            boxStockDisplay = `目前 ${currentBoxStock} 箱・指定 ${p.fixedQty} 後用 ${previewBoxes} 箱・剩 ${previewRemain} 箱`;
         } else {
-            boxStockDisplay = `目前 ${currentBoxStock} 箱`;
+            // 顯示「這個箱型」被所有商品（含預設+自訂）指定量加總後的預估用量，而不是只看這一個商品自己
+            const { totalBoxes, contributors } = getBoxTypeFixedUsage(brand, effectiveBoxId);
+            if (totalBoxes > 0) {
+                const previewRemain = currentBoxStock - totalBoxes;
+                const detail = contributors.length > 1
+                    ? `；${contributors.map(c => `${c.name}×${c.boxes}`).join('、')}`
+                    : '';
+                boxStockDisplay = `目前 ${currentBoxStock} 箱・指定量合計用 ${totalBoxes} 箱・剩 ${previewRemain} 箱${previewRemain < 0 ? ' ⚠可能不足' : ''}${detail}`;
+            } else {
+                boxStockDisplay = `目前 ${currentBoxStock} 箱`;
+            }
         }
         const boxTypeBadge = boxTypeTargetName
             ? `<span style="font-family:var(--mono);font-size:9px;color:var(--gold);">📦 共用「${boxTypeTargetName}」的箱子庫存（${boxStockDisplay}）</span>`
@@ -3023,7 +3063,119 @@ function exportCustomProductsToExcel(brand) {
 
 const LS_KEY = 'lf_des_alloc_v1';
 
-function saveState() {
+// ── Firebase 即時同步（新增功能）──
+// 用獨立路徑 lf_allocation_system，避免跟同一個 Firebase 專案下其他 DASKA 系統的資料互相干擾
+const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyDIS9wZH0pFMUFj-CTROb-cewiFTknrKmE",
+    authDomain: "daska-f4811.firebaseapp.com",
+    databaseURL: "https://daska-f4811-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "daska-f4811",
+    storageBucket: "daska-f4811.firebasestorage.app",
+    messagingSenderId: "1046969996907",
+    appId: "1:1046969996907:web:4d444ef0ade46e80e2432e",
+};
+const FIREBASE_PATH = 'lf_allocation_system';
+
+let fbEnabled = false;
+let fbDbRef = null;
+let fbSaveTimer = null;
+let fbLastPushedJson = null;
+let fbPendingRemoteState = null;
+let fbInitialLoadDone = false;
+
+function isUserEditing() {
+    const el = document.activeElement;
+    return !!(el && (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA'));
+}
+
+function updateSyncStatus(status) {
+    const el = document.getElementById('sync-status-indicator');
+    if (!el) return;
+    const map = {
+        connected: { text: '🟢 已連線同步', color: '#4ade80' },
+        offline:   { text: '🔴 離線模式（本機資料）', color: '#f0a0a0' },
+        syncing:   { text: '🟡 同步中...', color: '#e0c060' },
+        error:     { text: '⚠ 連線異常，使用本機資料', color: '#f0a0a0' },
+        off:       { text: '// AUTO-SAVE ON', color: '#555' },
+    };
+    const s = map[status] || map.off;
+    el.textContent = s.text;
+    el.style.color = s.color;
+}
+
+function initFirebaseSync() {
+    try {
+        firebase.initializeApp(FIREBASE_CONFIG);
+        fbDbRef = firebase.database().ref(FIREBASE_PATH);
+        fbEnabled = true;
+    } catch (err) {
+        console.error('Firebase 初始化失敗，改用本機儲存模式', err);
+        fbEnabled = false;
+        updateSyncStatus('off');
+        return;
+    }
+
+    firebase.database().ref('.info/connected').on('value', (snap) => {
+        updateSyncStatus(snap.val() === true ? 'connected' : 'offline');
+    });
+
+    fbDbRef.on('value', (snapshot) => {
+        const remoteState = snapshot.val();
+        if (!remoteState) {
+            // Firebase 上還沒有任何資料（第一次接上）：把目前本機資料當作初始值寫上去
+            if (!fbInitialLoadDone) {
+                fbInitialLoadDone = true;
+                pushStateToFirebase(buildStateObject(), true);
+            }
+            return;
+        }
+        const json = JSON.stringify(remoteState);
+        fbInitialLoadDone = true;
+        if (json === fbLastPushedJson) return; // 這是自己剛寫入的回音，不用重繪
+        if (isUserEditing()) {
+            fbPendingRemoteState = remoteState; // 先不要打斷正在輸入的欄位，等使用者編輯完再套用
+            return;
+        }
+        applyStateObject(remoteState);
+        try { localStorage.setItem(LS_KEY, json); } catch(e) {}
+    }, (err) => {
+        console.error('Firebase 讀取失敗，改用本機資料', err);
+        updateSyncStatus('error');
+    });
+}
+
+// 使用者從輸入框離開時，如果有暫存的遠端更新，這時候才套用（避免打斷正在打字）
+document.addEventListener('focusout', () => {
+    setTimeout(() => {
+        if (!isUserEditing() && fbPendingRemoteState) {
+            const toApply = fbPendingRemoteState;
+            fbPendingRemoteState = null;
+            applyStateObject(toApply);
+            try { localStorage.setItem(LS_KEY, JSON.stringify(toApply)); } catch(e) {}
+        }
+    }, 80);
+});
+
+function pushStateToFirebase(state, immediate) {
+    if (!fbEnabled) return;
+    if (fbSaveTimer) clearTimeout(fbSaveTimer);
+    const doPush = () => {
+        const json = JSON.stringify(state);
+        fbLastPushedJson = json;
+        updateSyncStatus('syncing');
+        fbDbRef.set(state)
+            .then(() => updateSyncStatus('connected'))
+            .catch(err => {
+                console.error('Firebase 寫入失敗', err);
+                updateSyncStatus('error');
+            });
+    };
+    if (immediate) doPush();
+    else fbSaveTimer = setTimeout(doPush, 600);
+}
+
+
+function buildStateObject() {
     const state = { currentBrand, brands: {} };
     ['lf','des','yt','le'].forEach(brand => {
         const data = BRAND_DATA[brand];
@@ -3045,7 +3197,64 @@ function saveState() {
         }
         state.brands[brand] = entry;
     });
+    return state;
+}
+
+function saveState() {
+    const state = buildStateObject();
     try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
+    pushStateToFirebase(state, false);
+}
+
+// ── 完整備份匯出/匯入（新增功能）：讓資料可以在不同裝置間手動轉移 ──
+// localStorage 是瀏覽器本機儲存，不會跨裝置同步；這裡提供「匯出成檔案 → 傳到別的裝置 → 匯入」的替代方案
+function exportFullBackup() {
+    saveState(); // 先確保是最新狀態
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) {
+        alert('目前沒有任何已儲存的資料可以匯出');
+        return;
+    }
+    const blob = new Blob([raw], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const now = new Date();
+    const stamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+    a.href = url;
+    a.download = `LF分配系統備份_${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+function importFullBackup(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const parsed = JSON.parse(e.target.result);
+            if (!parsed || typeof parsed !== 'object' || !parsed.brands || !parsed.brands.lf) {
+                alert('這個檔案格式不正確，不是本系統匯出的備份檔');
+                input.value = '';
+                return;
+            }
+            if (!confirm(fbEnabled
+                ? '匯入備份會覆蓋「所有已連線裝置」目前的資料（因為已接上即時同步），確定要繼續嗎？'
+                : '匯入備份會覆蓋「這個裝置上」目前所有已存的資料，確定要繼續嗎？')) {
+                input.value = '';
+                return;
+            }
+            localStorage.setItem(LS_KEY, JSON.stringify(parsed));
+            pushStateToFirebase(parsed, true);
+            location.reload();
+        } catch(err) {
+            alert('讀取失敗，請確認選擇的是正確的備份 .json 檔案');
+            input.value = '';
+        }
+    };
+    reader.readAsText(file);
 }
 
 function loadState() {
@@ -3053,7 +3262,13 @@ function loadState() {
         const raw = localStorage.getItem(LS_KEY);
         if (!raw) return;
         const state = JSON.parse(raw);
+        applyStateObject(state);
+    } catch(e) {}
+}
 
+// 把一份 state 物件（不管是來自 localStorage 還是 Firebase）套用到畫面上
+function applyStateObject(state) {
+    try {
         ['lf','des','yt','le'].forEach(brand => {
             const saved = state.brands && state.brands[brand];
             if (!saved) return;
@@ -3143,6 +3358,7 @@ document.addEventListener('input', saveState);
 });
 loadState();
 renderLemMixTable();
+initFirebaseSync();
 </script>
 </body>
 </html>

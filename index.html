@@ -304,9 +304,11 @@
         .remain-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 5px; margin-bottom: 12px; }
         .remain-item { padding: 6px 4px; border-radius: 2px; text-align: center; border: 1px solid var(--border); background: #fff; }
         .remain-item.ok { background: var(--ok-light); border-color: #a3d5b8; }
+        .remain-item.warn { background: var(--warn-light); border-color: #f0c0a8; }
         .remain-item-label { font-family: var(--mono); font-size: 8px; color: #888; }
         .remain-item-val { font-family: var(--display); font-size: 18px; line-height: 1; }
         .remain-item.ok .remain-item-val { color: var(--ok); }
+        .remain-item.warn .remain-item-val { color: var(--warn); }
 
         .status-bar { padding: 9px 12px; border-radius: 2px; font-family: var(--mono); font-size: 11px; text-align: center; font-weight: 500; }
         .status-bar.ok { background: var(--ok-light); color: var(--ok); border: 1px solid #a3d5b8; }
@@ -352,7 +354,7 @@
         .excel-map-match-count { font-family: var(--mono); font-size: 11px; color: var(--ok); font-weight: 700; }
         .excel-map-match-count.zero { color: var(--warn); }
 
-        /* 箱子庫存（新增功能） */
+        /* 盒子庫存（新增功能） */
         .box-stock-remain { font-family: var(--mono); font-size: 9px; color: var(--ok); margin-top: 2px; min-height: 12px; }
         .box-stock-remain.warn { color: var(--warn); font-weight: 700; }
         .plan-box-stock { font-family: var(--mono); font-size: 10px; color: var(--ok); margin-top: 4px; padding-left: 34px; }
@@ -422,14 +424,14 @@
             <div class="card-head collapsible" onclick="toggleCardCollapse('boxstock-lf')">
                 <div class="card-head-num">01b</div>
                 <div>
-                    <div class="card-head-title">箱子庫存</div>
+                    <div class="card-head-title">盒子庫存</div>
                     <div class="card-head-sub">BOX / CARTON STOCK</div>
                 </div>
                 <span class="card-collapse-arrow" id="stock-collapse-arrow-boxstock-lf">▼</span>
             </div>
             <div class="card-body" id="stock-card-body-boxstock-lf">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap;">
-                    <span style="font-family:var(--mono);font-size:10px;color:#888;letter-spacing:1px;">// 箱型依現有商品品項自動列出，可手動輸入或匯入 Excel</span>
+                    <span style="font-family:var(--mono);font-size:10px;color:#888;letter-spacing:1px;">// 盒型依現有商品品項自動列出，可手動輸入或匯入 Excel</span>
                     <label for="box-excel-upload-lf" style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--ok);color:#fff;border-radius:2px;font-family:var(--mono);font-size:11px;cursor:pointer;letter-spacing:0.5px;">
                         📂 匯入 Excel
                         <input type="file" id="box-excel-upload-lf" accept=".xlsx,.xls" style="display:none;" onchange="importBoxExcel(this, 'lf')">
@@ -528,9 +530,9 @@
                         </div>
                         <div class="custom-row" style="grid-template-columns:1fr;">
                             <div>
-                                <div class="custom-label">使用箱型（決定跟哪個商品共用箱子庫存；預設＝獨立箱型）</div>
+                                <div class="custom-label">使用盒型（決定跟哪個商品共用盒子庫存；預設＝獨立盒型）</div>
                                 <select id="custom-boxtype-lf" class="custom-input" style="padding:5px;">
-                                    <option value="">（獨立箱型，用此自訂商品自己的名稱）</option>
+                                    <option value="">（獨立盒型，用此自訂商品自己的名稱）</option>
                                 </select>
                             </div>
                         </div>
@@ -574,6 +576,8 @@
                 </div>
                 <div class="section-label">// 分配後剩餘庫存</div>
                 <div class="remain-grid" id="remain-grid-lf"></div>
+                <div class="section-label">// 分配後剩餘盒子庫存</div>
+                <div class="remain-grid" id="box-remain-grid-lf"></div>
                 <div class="status-bar idle" id="status-banner-lf">// 等待分配運算...</div>
             </div>
         </div>
@@ -612,14 +616,14 @@
             <div class="card-head collapsible" onclick="toggleCardCollapse('boxstock-des')">
                 <div class="card-head-num">01b</div>
                 <div>
-                    <div class="card-head-title">箱子庫存</div>
+                    <div class="card-head-title">盒子庫存</div>
                     <div class="card-head-sub">BOX / CARTON STOCK</div>
                 </div>
                 <span class="card-collapse-arrow" id="stock-collapse-arrow-boxstock-des">▼</span>
             </div>
             <div class="card-body" id="stock-card-body-boxstock-des">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap;">
-                    <span style="font-family:var(--mono);font-size:10px;color:#888;letter-spacing:1px;">// 箱型依現有商品品項自動列出，可手動輸入或匯入 Excel</span>
+                    <span style="font-family:var(--mono);font-size:10px;color:#888;letter-spacing:1px;">// 盒型依現有商品品項自動列出，可手動輸入或匯入 Excel</span>
                     <label for="box-excel-upload-des" style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--ok);color:#fff;border-radius:2px;font-family:var(--mono);font-size:11px;cursor:pointer;letter-spacing:0.5px;">
                         📂 匯入 Excel
                         <input type="file" id="box-excel-upload-des" accept=".xlsx,.xls" style="display:none;" onchange="importBoxExcel(this, 'des')">
@@ -718,9 +722,9 @@
                         </div>
                         <div class="custom-row" style="grid-template-columns:1fr;">
                             <div>
-                                <div class="custom-label">使用箱型（決定跟哪個商品共用箱子庫存；預設＝獨立箱型）</div>
+                                <div class="custom-label">使用盒型（決定跟哪個商品共用盒子庫存；預設＝獨立盒型）</div>
                                 <select id="custom-boxtype-des" class="custom-input" style="padding:5px;">
-                                    <option value="">（獨立箱型，用此自訂商品自己的名稱）</option>
+                                    <option value="">（獨立盒型，用此自訂商品自己的名稱）</option>
                                 </select>
                             </div>
                         </div>
@@ -764,6 +768,8 @@
                 </div>
                 <div class="section-label">// 分配後剩餘庫存</div>
                 <div class="remain-grid" id="remain-grid-des"></div>
+                <div class="section-label">// 分配後剩餘盒子庫存</div>
+                <div class="remain-grid" id="box-remain-grid-des"></div>
                 <div class="status-bar idle" id="status-banner-des">// 等待分配運算...</div>
             </div>
         </div>
@@ -802,14 +808,14 @@
             <div class="card-head collapsible" onclick="toggleCardCollapse('boxstock-yt')">
                 <div class="card-head-num">01b</div>
                 <div>
-                    <div class="card-head-title">箱子庫存</div>
+                    <div class="card-head-title">盒子庫存</div>
                     <div class="card-head-sub">BOX / CARTON STOCK</div>
                 </div>
                 <span class="card-collapse-arrow" id="stock-collapse-arrow-boxstock-yt">▼</span>
             </div>
             <div class="card-body" id="stock-card-body-boxstock-yt">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap;">
-                    <span style="font-family:var(--mono);font-size:10px;color:#888;letter-spacing:1px;">// 箱型依現有商品品項自動列出，可手動輸入或匯入 Excel</span>
+                    <span style="font-family:var(--mono);font-size:10px;color:#888;letter-spacing:1px;">// 盒型依現有商品品項自動列出，可手動輸入或匯入 Excel</span>
                     <label for="box-excel-upload-yt" style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--ok);color:#fff;border-radius:2px;font-family:var(--mono);font-size:11px;cursor:pointer;letter-spacing:0.5px;">
                         📂 匯入 Excel
                         <input type="file" id="box-excel-upload-yt" accept=".xlsx,.xls" style="display:none;" onchange="importBoxExcel(this, 'yt')">
@@ -908,9 +914,9 @@
                         </div>
                         <div class="custom-row" style="grid-template-columns:1fr;">
                             <div>
-                                <div class="custom-label">使用箱型（決定跟哪個商品共用箱子庫存；預設＝獨立箱型）</div>
+                                <div class="custom-label">使用盒型（決定跟哪個商品共用盒子庫存；預設＝獨立盒型）</div>
                                 <select id="custom-boxtype-yt" class="custom-input" style="padding:5px;">
-                                    <option value="">（獨立箱型，用此自訂商品自己的名稱）</option>
+                                    <option value="">（獨立盒型，用此自訂商品自己的名稱）</option>
                                 </select>
                             </div>
                         </div>
@@ -954,6 +960,8 @@
                 </div>
                 <div class="section-label">// 分配後剩餘庫存</div>
                 <div class="remain-grid" id="remain-grid-yt"></div>
+                <div class="section-label">// 分配後剩餘盒子庫存</div>
+                <div class="remain-grid" id="box-remain-grid-yt"></div>
                 <div class="status-bar idle" id="status-banner-yt">// 等待分配運算...</div>
             </div>
         </div>
@@ -992,14 +1000,14 @@
             <div class="card-head collapsible" onclick="toggleCardCollapse('boxstock-le')">
                 <div class="card-head-num">01b</div>
                 <div>
-                    <div class="card-head-title">箱子庫存</div>
+                    <div class="card-head-title">盒子庫存</div>
                     <div class="card-head-sub">BOX / CARTON STOCK</div>
                 </div>
                 <span class="card-collapse-arrow" id="stock-collapse-arrow-boxstock-le">▼</span>
             </div>
             <div class="card-body" id="stock-card-body-boxstock-le">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap;">
-                    <span style="font-family:var(--mono);font-size:10px;color:#888;letter-spacing:1px;">// 箱型依現有商品品項自動列出，可手動輸入或匯入 Excel</span>
+                    <span style="font-family:var(--mono);font-size:10px;color:#888;letter-spacing:1px;">// 盒型依現有商品品項自動列出，可手動輸入或匯入 Excel</span>
                     <label for="box-excel-upload-le" style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--ok);color:#fff;border-radius:2px;font-family:var(--mono);font-size:11px;cursor:pointer;letter-spacing:0.5px;">
                         📂 匯入 Excel
                         <input type="file" id="box-excel-upload-le" accept=".xlsx,.xls" style="display:none;" onchange="importBoxExcel(this, 'le')">
@@ -1098,9 +1106,9 @@
                         </div>
                         <div class="custom-row" style="grid-template-columns:1fr;">
                             <div>
-                                <div class="custom-label">使用箱型（決定跟哪個商品共用箱子庫存；預設＝獨立箱型）</div>
+                                <div class="custom-label">使用盒型（決定跟哪個商品共用盒子庫存；預設＝獨立盒型）</div>
                                 <select id="custom-boxtype-le" class="custom-input" style="padding:5px;">
-                                    <option value="">（獨立箱型，用此自訂商品自己的名稱）</option>
+                                    <option value="">（獨立盒型，用此自訂商品自己的名稱）</option>
                                 </select>
                             </div>
                         </div>
@@ -1160,6 +1168,8 @@
                 </div>
                 <div class="section-label">// 分配後剩餘庫存</div>
                 <div class="remain-grid" id="remain-grid-le"></div>
+                <div class="section-label">// 分配後剩餘盒子庫存</div>
+                <div class="remain-grid" id="box-remain-grid-le"></div>
                 <div class="status-bar idle" id="status-banner-le">// 等待分配運算...</div>
             </div>
         </div>
@@ -1219,11 +1229,11 @@
     </div>
 </div>
 
-<!-- 箱子庫存 Excel 欄位對應設定彈窗（新增功能） -->
+<!-- 盒子庫存 Excel 欄位對應設定彈窗（新增功能） -->
 <div class="excel-map-overlay" id="box-excel-map-overlay" onclick="if(event.target===this) closeBoxExcelMapModal()">
     <div class="excel-map-modal">
         <div class="excel-map-head">
-            <span class="excel-map-title" id="box-excel-map-title">📦 設定箱子庫存 Excel 欄位對應</span>
+            <span class="excel-map-title" id="box-excel-map-title">📦 設定盒子庫存 Excel 欄位對應</span>
             <button class="excel-map-close" onclick="closeBoxExcelMapModal()">✕</button>
         </div>
         <div class="excel-map-body">
@@ -1234,10 +1244,10 @@
             <div class="excel-map-row">
                 <span class="excel-map-label">商品名稱欄位</span>
                 <select class="excel-map-select" id="box-excel-map-name-select" onchange="onBoxExcelMapColChange()"></select>
-                <span class="excel-map-label" style="min-width:auto;margin-left:12px;">箱子數量欄位</span>
+                <span class="excel-map-label" style="min-width:auto;margin-left:12px;">盒子數量欄位</span>
                 <select class="excel-map-select" id="box-excel-map-qty-select" onchange="onBoxExcelMapColChange()"></select>
             </div>
-            <p class="excel-map-hint">// 系統已自動猜測最可能的欄位（橘色=商品名稱欄、綠色=箱子數量欄），若不正確請自行從下拉選單調整。商品名稱需與「商品設定」裡的名稱完全相符才能對應。下方為前幾筆資料預覽。</p>
+            <p class="excel-map-hint">// 系統已自動猜測最可能的欄位（橘色=商品名稱欄、綠色=盒子數量欄），若不正確請自行從下拉選單調整。商品名稱需與「商品設定」裡的名稱完全相符才能對應。下方為前幾筆資料預覽。</p>
             <div class="excel-map-preview-wrap">
                 <table class="excel-map-preview" id="box-excel-map-preview-table"></table>
             </div>
@@ -1893,6 +1903,7 @@ function addCustomProduct(brand) {
     });
     data.comboOrder = [];
     renderComboPreview(brand);
+    saveState();
 }
 
 
@@ -1950,29 +1961,30 @@ function removeCustom(cid, brand) {
     data.customProducts = data.customProducts.filter(p => p.id !== cid);
     renderCustomList(brand);
     renderBoxStockGrid(brand);
+    saveState();
 }
 
-// ── 箱子庫存（新增功能）：箱型依現有商品品項自動列出，計算生產後用了多少箱、剩多少箱 ──
-// 用「現有預設商品」清單填入自訂商品的「使用箱型」下拉選單
+// ── 盒子庫存（新增功能）：盒型依現有商品品項自動列出，計算生產後用了多少箱、剩多少箱 ──
+// 用「現有預設商品」清單填入自訂商品的「使用盒型」下拉選單
 function renderBoxTypeSelector(brand) {
     const sel = document.getElementById(`custom-boxtype-${brand}`);
     if (!sel) return;
     const presetOptions = BRAND_DATA[brand].products.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-    sel.innerHTML = `<option value="">（獨立箱型，用此自訂商品自己的名稱）</option>${presetOptions}`;
+    sel.innerHTML = `<option value="">（獨立盒型，用此自訂商品自己的名稱）</option>${presetOptions}`;
 }
 
 function renderBoxStockGrid(brand) {
     const data = BRAND_DATA[brand];
     const grid = document.getElementById(`box-stock-grid-${brand}`);
     if (!grid) return;
-    // 只有「沒有指定共用箱型」的商品才擁有自己的箱子庫存欄位；
+    // 只有「沒有指定共用盒型」的商品才擁有自己的盒子庫存欄位；
     // 有指定 boxTypeId 的自訂商品會跟目標商品共用同一格，不重複顯示
     const ownBoxProducts = [...data.products, ...data.customProducts].filter(p => !p.boxTypeId);
     if (ownBoxProducts.length === 0) {
-        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#aaa;font-family:var(--mono);font-size:11px;padding:10px 0;">// 尚無商品可設定箱型</div>`;
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#aaa;font-family:var(--mono);font-size:11px;padding:10px 0;">// 尚無商品可設定盒型</div>`;
         return;
     }
-    // 找出每個箱型被哪些自訂商品共用，附註在該箱型輸入格上
+    // 找出每個盒型被哪些自訂商品共用，附註在該盒型輸入格上
     const sharedByMap = {};
     data.customProducts.forEach(p => {
         if (p.boxTypeId) {
@@ -1983,7 +1995,7 @@ function renderBoxStockGrid(brand) {
     grid.innerHTML = ownBoxProducts.map(p => {
         const val = data.boxStocks[p.id] != null ? data.boxStocks[p.id] : '';
         const sharedNote = sharedByMap[p.id]
-            ? `<div style="font-family:var(--mono);font-size:8px;color:var(--gold);margin-top:1px;" title="這些自訂商品也共用此箱型">🔗 ${sharedByMap[p.id].join('、')}</div>`
+            ? `<div style="font-family:var(--mono);font-size:8px;color:var(--gold);margin-top:1px;" title="這些自訂商品也共用此盒型">🔗 ${sharedByMap[p.id].join('、')}</div>`
             : '';
         return `<div class="stock-item">
             <div class="stock-main">
@@ -2003,7 +2015,7 @@ function updateBoxStockValue(pid, brand, val) {
     saveState();
 }
 
-// ── 箱子庫存 Excel 匯入（依商品名稱比對，格式不符時可手動設定欄位對應）──
+// ── 盒子庫存 Excel 匯入（依商品名稱比對，格式不符時可手動設定欄位對應）──
 let boxExcelMapState = null;
 
 // 商品名稱標準化：忽略空格與英文大小寫差異，讓 Excel 裡的「LF2」也能對應到系統裡的「LF 2」
@@ -2021,7 +2033,7 @@ function countBoxNameMatches(rows, colName, nameToId) {
     return cnt;
 }
 
-// 自動掃描每一欄，找出最像「商品名稱欄」與「箱子數量欄」的欄位
+// 自動掃描每一欄，找出最像「商品名稱欄」與「盒子數量欄」的欄位
 function autoDetectBoxColumns(rows, nameToId) {
     const maxCols = rows.reduce((m, r) => Math.max(m, r.length), 0) || 1;
     let bestNameCol = 0, bestNameScore = -1;
@@ -2100,7 +2112,7 @@ function doBoxColumnImport(rows, brand, nameToId, sheetName, colName, colQty) {
     statusEl.style.color = imported > 0 ? 'var(--ok)' : 'var(--warn)';
     statusEl.style.border = imported > 0 ? '1px solid #a3d5b8' : '1px solid #f0c0a8';
     statusEl.innerText = imported > 0
-        ? `✓ 成功匯入 ${imported} 筆箱子庫存（分頁「${sheetName}」${colIndexToLetter(colName)}欄名稱 × ${colIndexToLetter(colQty)}欄數量）`
+        ? `✓ 成功匯入 ${imported} 筆盒子庫存（分頁「${sheetName}」${colIndexToLetter(colName)}欄名稱 × ${colIndexToLetter(colQty)}欄數量）`
         : '⚠ 找不到符合的商品名稱，請重新設定欄位對應';
 
     saveState();
@@ -2131,7 +2143,7 @@ function importBoxExcel(input, brand) {
     reader.onload = function(e) {
         try {
             const wb = XLSX.read(e.target.result, { type: 'array' });
-            const expectedSheetName = `${brand.toUpperCase()}箱子庫存`;
+            const expectedSheetName = `${brand.toUpperCase()}盒子庫存`;
 
             let handled = false;
 
@@ -2187,7 +2199,7 @@ function importBoxExcelForceManual(input, brand) {
     reader.onload = function(e) {
         try {
             const wb = XLSX.read(e.target.result, { type: 'array' });
-            const expectedSheetName = `${brand.toUpperCase()}箱子庫存`;
+            const expectedSheetName = `${brand.toUpperCase()}盒子庫存`;
 
             const guess = pickBestBoxSheet(wb, nameToId);
             const startSheet = guess.matchCount > 0 ? guess.sheetName : (wb.Sheets[expectedSheetName] ? expectedSheetName : wb.SheetNames[0]);
@@ -2211,7 +2223,7 @@ function openBoxExcelMapModal(brand, expectedSheetName) {
     const state = boxExcelMapState;
     const wb = state.workbook;
 
-    document.getElementById('box-excel-map-title').textContent = `📦 設定箱子庫存 Excel 欄位對應（${brand.toUpperCase()}）`;
+    document.getElementById('box-excel-map-title').textContent = `📦 設定盒子庫存 Excel 欄位對應（${brand.toUpperCase()}）`;
 
     const sheetSelect = document.getElementById('box-excel-map-sheet-select');
     sheetSelect.innerHTML = wb.SheetNames.map(name =>
@@ -2395,8 +2407,9 @@ function clearHistoryWithConfirm(btn) {
     clearHistory();
 }
 
-// 計算「同一個箱型」被哪些商品（含預設+自訂）以指定量方式一起使用，加總起來的預估用箱量
+// 計算「同一個盒型」被哪些商品（含預設+自訂）以指定量方式一起使用，加總起來的預估用箱量
 // 預設商品的指定量是即時讀 DOM（因為預設商品本身沒有固定存 fixedQty 屬性），自訂商品則讀物件上的 fixedQty
+// 注意：指定量本身就直接對應「盒子數量」，不需要再除以裝箱數量
 function getBoxTypeFixedUsage(brand, effectiveBoxId) {
     const data = BRAND_DATA[brand];
     let totalBoxes = 0;
@@ -2408,16 +2421,16 @@ function getBoxTypeFixedUsage(brand, effectiveBoxId) {
         const fixedEl = document.getElementById(`fixed-${pr.id}-${brand}`);
         const fixedQty = fixedEl ? (parseInt(fixedEl.value) || 0) : 0;
         if (fixedQty > 0) {
-            const boxes = Math.floor(fixedQty / pr.boxSize);
-            if (boxes > 0) { totalBoxes += boxes; contributors.push({ name: pr.name, boxes }); }
+            totalBoxes += fixedQty;
+            contributors.push({ name: pr.name, boxes: fixedQty });
         }
     });
     data.customProducts.forEach(pr => {
         const eid = pr.boxTypeId || pr.id;
         if (eid !== effectiveBoxId) return;
         if (pr.fixedQty > 0) {
-            const boxes = Math.floor(pr.fixedQty / pr.boxSize);
-            if (boxes > 0) { totalBoxes += boxes; contributors.push({ name: pr.name, boxes }); }
+            totalBoxes += pr.fixedQty;
+            contributors.push({ name: pr.name, boxes: pr.fixedQty });
         }
     });
 
@@ -2453,7 +2466,7 @@ function renderCustomList(brand) {
         const indexListHtml = order.map(ing => `<span>${ing}</span>`).join('');
         const indexGridHtml = `<div class="custom-item-index" style="grid-template-columns:repeat(${cols},var(--cell-size,18px));">${indexListHtml}</div>`;
 
-        const boxTypeOpts = `<option value="">獨立箱型</option>` + data.products.map(bp =>
+        const boxTypeOpts = `<option value="">獨立盒型</option>` + data.products.map(bp =>
             `<option value="${bp.id}" ${p.boxTypeId===bp.id?'selected':''}>${bp.name}</option>`
         ).join('');
         const boxTypeTargetName = p.boxTypeId ? (data.products.find(bp => bp.id === p.boxTypeId)?.name || '（找不到）') : null;
@@ -2463,7 +2476,7 @@ function renderCustomList(brand) {
         if (currentBoxStock == null) {
             boxStockDisplay = '尚未設定庫存';
         } else {
-            // 顯示「這個箱型」被所有商品（含預設+自訂）指定量加總後的預估用量，而不是只看這一個商品自己
+            // 顯示「這個盒型」被所有商品（含預設+自訂）指定量加總後的預估用量，而不是只看這一個商品自己
             const { totalBoxes, contributors } = getBoxTypeFixedUsage(brand, effectiveBoxId);
             if (totalBoxes > 0) {
                 const previewRemain = currentBoxStock - totalBoxes;
@@ -2476,8 +2489,8 @@ function renderCustomList(brand) {
             }
         }
         const boxTypeBadge = boxTypeTargetName
-            ? `<span style="font-family:var(--mono);font-size:9px;color:var(--gold);">📦 共用「${boxTypeTargetName}」的箱子庫存（${boxStockDisplay}）</span>`
-            : `<span style="font-family:var(--mono);font-size:9px;color:#999;">📦 獨立箱型（${boxStockDisplay}）</span>`;
+            ? `<span style="font-family:var(--mono);font-size:9px;color:var(--gold);">📦 共用「${boxTypeTargetName}」的盒子庫存（${boxStockDisplay}）</span>`
+            : `<span style="font-family:var(--mono);font-size:9px;color:#999;">📦 獨立盒型（${boxStockDisplay}）</span>`;
 
         return `<div class="custom-item">
             <div class="custom-item-main">
@@ -2502,7 +2515,7 @@ function renderCustomList(brand) {
                         onchange="updateCustomFixed('${p.id}', this.value, '${brand}')">
                 </div>
                 <div class="custom-item-fixed">
-                    <span class="custom-item-fixed-label">使用箱型</span>
+                    <span class="custom-item-fixed-label">使用盒型</span>
                     <select style="padding:3px 4px;font-family:var(--mono);font-size:10px;border:1px solid var(--border);border-radius:2px;background:#fff;outline:none;"
                         onchange="updateCustomBoxType('${p.id}', this.value, '${brand}')">${boxTypeOpts}</select>
                 </div>
@@ -2576,9 +2589,9 @@ function calculate(brand) {
             deductStock(p, qty, stocks);
             const rev = qty * p.price;
             total += rev;
-            plan.push({ id: p.id, name: p.name, qty, rev, label:`指定#${p.currentPriority}`, boxes: Math.floor(qty/p.boxSize), partial: qty%p.boxSize, boxSize: p.boxSize, isFixed:true, shortage: qty<p.fixedQty, isCustom: p.isCustom||false, boxTypeId: p.boxTypeId||null });
+            plan.push({ id: p.id, name: p.name, qty, rev, label:`指定#${p.currentPriority}`, boxes: Math.floor(qty/p.boxSize), partial: qty%p.boxSize, boxSize: p.boxSize, isFixed:true, shortage: qty<p.fixedQty, isCustom: p.isCustom||false, boxTypeId: p.boxTypeId||null, boxStockUsage: qty });
         } else if (p.fixedQty > 0) {
-            plan.push({ id: p.id, name: p.name, qty: 0, rev: 0, label:`指定#${p.currentPriority}`, boxes: 0, partial: 0, boxSize: p.boxSize, isFixed:true, shortage: true, isCustom: p.isCustom||false, boxTypeId: p.boxTypeId||null });
+            plan.push({ id: p.id, name: p.name, qty: 0, rev: 0, label:`指定#${p.currentPriority}`, boxes: 0, partial: 0, boxSize: p.boxSize, isFixed:true, shortage: true, isCustom: p.isCustom||false, boxTypeId: p.boxTypeId||null, boxStockUsage: 0 });
         }
     });
 
@@ -2620,7 +2633,7 @@ function calculate(brand) {
             if (qty > 0) {
                 const rev = qty * p.price;
                 total += rev;
-                plan.push({ id: p.id, name: p.name, qty, rev, label:`#${prio}`, boxes: Math.floor(qty/p.boxSize), partial: qty%p.boxSize, boxSize: p.boxSize, isFixed:false, capped: qty%p.boxSize===0, isCustom: p.isCustom||false, boxTypeId: p.boxTypeId||null });
+                plan.push({ id: p.id, name: p.name, qty, rev, label:`#${prio}`, boxes: Math.floor(qty/p.boxSize), partial: qty%p.boxSize, boxSize: p.boxSize, isFixed:false, capped: qty%p.boxSize===0, isCustom: p.isCustom||false, boxTypeId: p.boxTypeId||null, boxStockUsage: qty });
             }
         });
     });
@@ -2645,28 +2658,29 @@ function renderReport(remainStocks, plan, total, brand) {
         </div>`;
     }).join('');
 
-    // ── 箱子庫存：計算每個商品這次生產用了多少箱、剩多少箱（新增功能；支援自訂商品共用現有箱型）──
+    // ── 盒子庫存：計算每個商品這次生產用了多少箱、剩多少箱（新增功能；支援自訂商品共用現有盒型）──
+    // 注意：這裡的「箱」是指定量/生產數量本身（1個=1箱），跟上面的「裝箱數量」完整箱數是不同概念，不要混用
     const boxStocks = BRAND_DATA[brand].boxStocks || {};
     const boxUsageMap = {};
     plan.forEach(item => {
-        if (item.boxes > 0) {
+        if (item.boxStockUsage > 0) {
             const key = item.boxTypeId || item.id;
-            if (key != null) boxUsageMap[key] = (boxUsageMap[key] || 0) + item.boxes;
+            if (key != null) boxUsageMap[key] = (boxUsageMap[key] || 0) + item.boxStockUsage;
         }
     });
     plan.forEach(item => {
         const key = item.boxTypeId || item.id;
         if (key != null && boxStocks[key] != null) {
             const totalUsed = boxUsageMap[key] || 0;
-            item.boxUsed = item.boxes;
+            item.boxUsed = item.boxStockUsage;
             item.boxRemain = boxStocks[key] - totalUsed;
-            item.boxShared = totalUsed !== item.boxes;
+            item.boxShared = totalUsed !== item.boxStockUsage;
         }
     });
-    // 更新每個商品箱子庫存欄位下方的「剩餘」提示（涵蓋所有商品，不限於本次生產清單內的）
+    // 更新每個商品盒子庫存欄位下方的「剩餘」提示（涵蓋所有商品，不限於本次生產清單內的）
     const allProductsForBox = [...BRAND_DATA[brand].products, ...BRAND_DATA[brand].customProducts];
     allProductsForBox.forEach(p => {
-        if (p.boxTypeId) return; // 這個商品跟別人共用箱型，沒有自己的輸入格可以更新
+        if (p.boxTypeId) return; // 這個商品跟別人共用盒型，沒有自己的輸入格可以更新
         const hintEl = document.getElementById(`box-remain-${p.id}-${brand}`);
         if (!hintEl) return;
         if (boxStocks[p.id] == null) { hintEl.textContent = ''; hintEl.classList.remove('warn'); return; }
@@ -2675,6 +2689,24 @@ function renderReport(remainStocks, plan, total, brand) {
         hintEl.textContent = used > 0 ? `用 ${used} 箱・剩 ${remain} 箱` : `剩 ${boxStocks[p.id]} 箱`;
         hintEl.classList.toggle('warn', remain < 0);
     });
+
+    // 右側「分配後剩餘盒子庫存」總覽（跟原料庫存的剩餘總覽同樣呈現方式）
+    const boxRemainGrid = document.getElementById(`box-remain-grid-${brand}`);
+    if (boxRemainGrid) {
+        const ownBoxProducts = allProductsForBox.filter(p => !p.boxTypeId && boxStocks[p.id] != null);
+        if (ownBoxProducts.length === 0) {
+            boxRemainGrid.innerHTML = '';
+        } else {
+            boxRemainGrid.innerHTML = ownBoxProducts.map(p => {
+                const used = boxUsageMap[p.id] || 0;
+                const remain = boxStocks[p.id] - used;
+                return `<div class="remain-item ${remain < 0 ? 'warn' : 'ok'}">
+                    <div class="remain-item-label" title="${p.name}">${p.name}</div>
+                    <div class="remain-item-val">${remain}</div>
+                </div>`;
+            }).join('');
+        }
+    }
 
     const planBox = document.getElementById(`plan-details-${brand}`);
     if (plan.length === 0) {
@@ -2692,7 +2724,7 @@ function renderReport(remainStocks, plan, total, brand) {
             else badge = item.capped ? `<span class="badge badge-ok">滿箱</span>` : `<span class="badge badge-gold">含散裝</span>`;
 
             const boxStockInfo = item.boxRemain != null
-                ? `<div class="plan-box-stock${item.boxRemain < 0 ? ' warn' : ''}">📦 箱子庫存${item.boxShared ? '（共用）' : ''}：此項用 ${item.boxUsed} 箱・剩 ${item.boxRemain} 箱${item.boxRemain < 0 ? ' ⚠不足' : ''}</div>`
+                ? `<div class="plan-box-stock${item.boxRemain < 0 ? ' warn' : ''}">📦 盒子庫存${item.boxShared ? '（共用）' : ''}：此項用 ${item.boxUsed} 箱・剩 ${item.boxRemain} 箱${item.boxRemain < 0 ? ' ⚠不足' : ''}</div>`
                 : '';
 
             return `<div class="plan-row">

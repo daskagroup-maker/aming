@@ -1871,13 +1871,8 @@ function addCustomProduct(brand) {
     const boxTypeId = boxTypeSel && boxTypeSel.value ? boxTypeSel.value : null;
     const cid = `custom-${++data.customIdCounter}`;
 
-    // 依勾選順序（data.comboOrder）展開成 reqOrder，讓圖片拼貼順序跟組合預覽一致
-    const reqOrder = [];
-    data.comboOrder.forEach(i => {
-        if (req[i] != null) {
-            for (let k = 0; k < req[i]; k++) reqOrder.push(i);
-        }
-    });
+       // 依拖曳排好的順序（一顆一筆）展開成 reqOrder，讓圖片拼貼順序跟組合預覽一致
+    const reqOrder = data.comboOrder.map(slot => slot.ing);
 
     data.customProducts.push({ id: cid, name, price, boxSize, req, reqOrder, fixedQty, currentPriority: prio, isCustom: true, boxTypeId });
     renderCustomList(brand);

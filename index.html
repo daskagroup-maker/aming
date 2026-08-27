@@ -1450,11 +1450,20 @@ function toggleIng(i, brand) {
 
     const data = BRAND_DATA[brand];
     if (cb.checked) {
-        if (!data.comboOrder.includes(i)) data.comboOrder.push(i);
+        const qty = Math.max(1, parseInt(qtyEl.value) || 1);
+        for (let k = 0; k < qty; k++) data.comboOrder.push(newComboSlot(i, brand));
     } else {
-        data.comboOrder = data.comboOrder.filter(x => x !== i);
+        data.comboOrder = data.comboOrder.filter(s => s.ing !== i);
     }
     renderComboPreview(brand);
+}
+
+// 產生一顆「獨立單位」：同一原料選了幾顆，就有幾筆各自帶不同 uid 的紀錄，
+// 拖曳排序時才能精準指到「這一顆」而不是整個原料
+function newComboSlot(ing, brand) {
+    const data = BRAND_DATA[brand];
+    data.comboUidCounter = (data.comboUidCounter || 0) + 1;
+    return { ing, uid: data.comboUidCounter };
 }
 
 // 依選中數量自動算出最接近正方形、但每行最多5個的排列（例：12→4x3, 15→5x3, 9→3x3）
@@ -1502,12 +1511,7 @@ function renderComboPreview(brand) {
     const validIngredients = data.validIngredients;
     const prefix = data.imgPrefix;
 
-    data.comboOrder = data.comboOrder.filter(i => document.getElementById(`ing-cb-${i}-${brand}`)?.checked);
-    validIngredients.forEach(i => {
-        if (document.getElementById(`ing-cb-${i}-${brand}`)?.checked && !data.comboOrder.includes(i)) {
-            data.comboOrder.push(i);
-        }
-    });
+    data.comboOrder = data.comboOrder.filter(slot => document.getElementById(`ing-cb-${slot.ing}-${brand}`)?.checked);
 
     if (data.comboOrder.length === 0) {
         grid.style.gridTemplateColumns = '1fr';
@@ -1516,41 +1520,36 @@ function renderComboPreview(brand) {
         return;
     }
 
-    const expanded = [];
-    data.comboOrder.forEach(i => {
-        const qty = Math.max(1, parseInt(document.getElementById(`ing-qty-${i}-${brand}`)?.value) || 1);
-        for (let k = 0; k < qty; k++) expanded.push(i);
-    });
-
-    const n = expanded.length;
+    const n = data.comboOrder.length;
     const { cols } = calcComboGrid(n);
     grid.style.gridTemplateColumns = `repeat(${cols}, 90px)`;
     grid.style.gridAutoFlow = 'row';
 
     grid.innerHTML = '';
-    data.comboOrder.forEach(i => {
-        const qty = Math.max(1, parseInt(document.getElementById(`ing-qty-${i}-${brand}`)?.value) || 1);
-        const src = IMG_MAP[`${prefix}-${String(i).padStart(2,'0')}`] || '';
-        const img = src ? `<img src="${src}" alt="#${i}">` : `#${i}`;
-        for (let k = 0; k < qty; k++) {
-            const cell = document.createElement('div');
-            cell.className = 'combo-cell-wrap';
-            cell.draggable = true;
-            cell.dataset.ing = i;
-            cell.innerHTML = `<div class="combo-cell${src ? '' : ' empty'}">${img}</div>`;
-            attachDragHandlers(cell, brand);
-            grid.appendChild(cell);
-        }
+    data.comboOrder.forEach(slot => {
+        const src = IMG_MAP[`${prefix}-${String(slot.ing).padStart(2,'0')}`] || '';
+        const img = src ? `<img src="${src}" alt="#${slot.ing}">` : `#${slot.ing}`;
+        const cell = document.createElement('div');
+        cell.className = 'combo-cell-wrap';
+        cell.draggable = true;
+        cell.dataset.ing = slot.ing;
+        cell.dataset.uid = slot.uid;
+        cell.innerHTML = `<div class="combo-cell${src ? '' : ' empty'}">${img}</div>`;
+        attachDragHandlers(cell, brand);
+        grid.appendChild(cell);
     });
-    countLabel.textContent = `已選 ${data.comboOrder.length} 項原料 · 共 ${n} 格 · 拖曳格子可調整順序`;
+    const uniqueIngCount = new Set(data.comboOrder.map(s => s.ing)).size;
+    countLabel.textContent = `已選 ${uniqueIngCount} 項原料 · 共 ${n} 格 · 拖曳格子可調整順序`;
 }
 
 // ── 拖拽排序（滑鼠 drag&drop + 觸控 pointer 雙模式支援）──
-let dragSrcIng = null;
+// comboOrder 現在存的是「每一顆的獨立單位」({ing, uid})，同一原料選了幾顆就有幾筆，
+// 拖曳時用 uid 精準辨識「這一顆」，可以只移動同原料裡的其中一顆，不會整批一起動
+let dragSrcUid = null;
 
 function attachDragHandlers(cell, brand) {
     cell.addEventListener('dragstart', (e) => {
-        dragSrcIng = parseInt(cell.dataset.ing);
+        dragSrcUid = parseInt(cell.dataset.uid);
         cell.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
     });
@@ -1566,8 +1565,8 @@ function attachDragHandlers(cell, brand) {
     cell.addEventListener('drop', (e) => {
         e.preventDefault();
         cell.classList.remove('drag-over');
-        const targetIng = parseInt(cell.dataset.ing);
-        reorderComboByDrag(dragSrcIng, targetIng, brand);
+        const targetUid = parseInt(cell.dataset.uid);
+        reorderComboByDrag(dragSrcUid, targetUid, brand);
     });
 
     let pointerDown = false;
@@ -1576,7 +1575,7 @@ function attachDragHandlers(cell, brand) {
         if (e.pointerType === 'mouse') return;
         pointerDown = true;
         startX = e.clientX; startY = e.clientY;
-        dragSrcIng = parseInt(cell.dataset.ing);
+        dragSrcUid = parseInt(cell.dataset.uid);
     });
     cell.addEventListener('pointermove', (e) => {
         if (!pointerDown) return;
@@ -1595,8 +1594,8 @@ function attachDragHandlers(cell, brand) {
         const overCell = el?.closest('.combo-cell-wrap');
         document.querySelectorAll('.combo-cell-wrap.drag-over').forEach(x => x.classList.remove('drag-over'));
         if (overCell) {
-            const targetIng = parseInt(overCell.dataset.ing);
-            reorderComboByDrag(dragSrcIng, targetIng, brand);
+            const targetUid = parseInt(overCell.dataset.uid);
+            reorderComboByDrag(dragSrcUid, targetUid, brand);
         }
     });
     cell.addEventListener('pointercancel', () => {
@@ -1605,13 +1604,16 @@ function attachDragHandlers(cell, brand) {
     });
 }
 
-function reorderComboByDrag(srcIng, targetIng, brand) {
-    if (srcIng == null || targetIng == null || srcIng === targetIng) return;
+function reorderComboByDrag(srcUid, targetUid, brand) {
+    if (srcUid == null || targetUid == null || srcUid === targetUid) return;
     const data = BRAND_DATA[brand];
-    const fromIdx = data.comboOrder.indexOf(srcIng);
-    const toIdx = data.comboOrder.indexOf(targetIng);
+    const fromIdx = data.comboOrder.findIndex(s => s.uid === srcUid);
+    const toIdx = data.comboOrder.findIndex(s => s.uid === targetUid);
     if (fromIdx === -1 || toIdx === -1) return;
-    [data.comboOrder[fromIdx], data.comboOrder[toIdx]] = [data.comboOrder[toIdx], data.comboOrder[fromIdx]];
+    // 用「搬移」而不是「交換」：把這一顆抽出來插到目標位置，其他顆自動往旁邊挪，
+    // 這樣同原料選兩顆時，才能只單獨移動其中一顆
+    const [moved] = data.comboOrder.splice(fromIdx, 1);
+    data.comboOrder.splice(toIdx, 0, moved);
     renderComboPreview(brand);
 }
 
@@ -1642,7 +1644,29 @@ function colorIngStock(ingId, brand) {
 // 勾選時用指定量判斷；未勾選時只顯示庫存狀態
 function checkIngStock(ingId, brand) {
     colorIngStock(ingId, brand);
+    syncComboSlotsForIngredient(ingId, brand);
     renderComboPreview(brand);
+}
+
+// 指定量輸入框變動時，把這個原料在 comboOrder 裡的「顆數」補足或砍到跟輸入框一致。
+// 增加時在最後面補新的一顆；減少時從後面開始砍，盡量不動到使用者已排好順序的顆
+function syncComboSlotsForIngredient(ingId, brand) {
+    const data = BRAND_DATA[brand];
+    const cb = document.getElementById(`ing-cb-${ingId}-${brand}`);
+    if (!cb || !cb.checked) return;
+    const desired = Math.max(1, parseInt(document.getElementById(`ing-qty-${ingId}-${brand}`).value) || 1);
+    const current = data.comboOrder.filter(s => s.ing === ingId).length;
+    if (desired > current) {
+        for (let k = 0; k < desired - current; k++) data.comboOrder.push(newComboSlot(ingId, brand));
+    } else if (desired < current) {
+        let toRemove = current - desired;
+        for (let idx = data.comboOrder.length - 1; idx >= 0 && toRemove > 0; idx--) {
+            if (data.comboOrder[idx].ing === ingId) {
+                data.comboOrder.splice(idx, 1);
+                toRemove--;
+            }
+        }
+    }
 }
 
 function recheckAllIngStock(brand) {

@@ -3311,7 +3311,7 @@ function buildStateObject() {
         data.products.forEach(p => {
             const prioEl = document.getElementById(`prio-${p.id}-${brand}`);
             const fixedEl = document.getElementById(`fixed-${p.id}-${brand}`);
-            presets[p.id] = { prio: prioEl?.value || 'skip', fixed: parseInt(fixedEl?.value) || 0, price: p.price || 0, box: p.boxSize || 1 };
+            presets[p.id] = { prio: prioEl?.value || 'skip', fixed: parseInt(fixedEl?.value) || 0, price: p.price || 0, box: p.boxSize || 1, req: p.req, reqOrder: p.reqOrder || null };
         });
         const entry = { stocks, presets, customProducts: data.customProducts, customIdCounter: data.customIdCounter, customHistory: data.customHistory, lastImportTime: data.lastImportTime || null, boxStocks: data.boxStocks || {} };
         if (brand === 'le') {
@@ -3420,6 +3420,18 @@ function applyStateObject(state) {
                     if (ps.box != null) {
                         p.boxSize = ps.box;
                         if (boxEl) boxEl.value = ps.box || 1;
+                    }
+                    // 還原「預設商品」被點圖片替換過的原料配方（若有存過），並刷新該列顯示
+                    if (ps.req) {
+                        p.req = ps.req;
+                        p.reqOrder = ps.reqOrder || null;
+                        const cell = document.getElementById(`preset-recipe-${p.id}-${brand}`);
+                        if (cell) cell.innerHTML = buildPresetRecipeCellHtml(p, brand);
+                        const costEl = document.getElementById(`cost-${p.id}-${brand}`);
+                        if (costEl) {
+                            const { total: costTotal, hasAllPrices } = calcProductCost(p.req, brand);
+                            costEl.textContent = hasAllPrices ? '成本¥'+costTotal.toLocaleString() : '成本未知';
+                        }
                     }
                 });
             }

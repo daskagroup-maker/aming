@@ -118,6 +118,9 @@
         .stock-item { background: var(--cream); border: 1px solid var(--border); border-radius: 2px; padding: 7px 9px; transition: border-color 0.15s; display: flex; gap: 7px; align-items: center; }
         .stock-item:focus-within { border-color: var(--accent); }
         .stock-thumb { width: 30px; height: 30px; border-radius: 2px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; background: #fff; }
+        .stock-thumb-wrap { position: relative; flex-shrink: 0; }
+        .stock-photo-btn { position: absolute; bottom: -4px; right: -4px; width: 15px; height: 15px; background: var(--ink); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; cursor: pointer; border: 1px solid var(--paper); line-height: 1; }
+        .stock-photo-btn:hover { background: var(--accent); }
         .ref-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; margin-bottom: 14px; }
         .ref-item { background: var(--cream); border: 1px solid var(--border); border-radius: 2px; padding: 5px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
         .ref-thumb { width: 40px; height: 40px; border-radius: 2px; object-fit: cover; border: 1px solid var(--border); background: #fff; }
@@ -1429,16 +1432,98 @@ function initStock(brand) {
     const unit = brand === 'le' ? 'g' : '';
     grid.innerHTML = validIngredients.map(i => {
         const src = IMG_MAP[`${prefix}-${String(i).padStart(2,'0')}`] || '';
-        const thumb = src ? `<img class="stock-thumb" src="${src}" alt="#${i}">` : '';
+        const thumb = src ? `<img class="stock-thumb" src="${src}" alt="#${i}">` : `<div class="stock-thumb" style="display:flex;align-items:center;justify-content:center;font-size:8px;color:#bbb;">無圖</div>`;
         return `
         <div class="stock-item">
-            ${thumb}
+            <div class="stock-thumb-wrap">
+                ${thumb}
+                <label class="stock-photo-btn" title="更換這個原料的照片">📷
+                    <input type="file" accept="image/*" style="display:none" onchange="handlePhotoUpload(this, ${i}, '${brand}')">
+                </label>
+            </div>
             <div class="stock-main">
                 <div class="stock-num">#${i}${unit ? ` <span style="opacity:.5;font-size:9px;">(${unit})</span>` : ''}</div>
                 <input type="number" class="stock-input" id="stock-${i}-${brand}" value="0" min="0" step="${step}" oninput="autoColorIngGrid('${brand}')">
             </div>
         </div>`;
     }).join('');
+}
+
+// ── 原料照片替換（新增功能）：改在瀏覽器本機儲存，會壓縮成 200px JPEG 避免佔用太多空間 ──
+// 注意：這個功能只存在「這台裝置」，不會透過 Firebase 跟其他裝置同步（避免拖慢原本庫存的即時同步），
+// 要帶到別的裝置的話，用上面「⬇ 匯出備份」/「⬆ 匯入備份」就會一併帶著走
+const IMG_OVERRIDE_LS_KEY = 'lf_des_img_overrides_v1';
+
+function loadImageOverrides() {
+    try {
+        const raw = localStorage.getItem(IMG_OVERRIDE_LS_KEY);
+        if (!raw) return;
+        const overrides = JSON.parse(raw);
+        Object.entries(overrides).forEach(([key, dataUrl]) => { IMG_MAP[key] = dataUrl; });
+    } catch(e) {}
+}
+
+function saveImageOverride(key, dataUrl) {
+    let overrides = {};
+    try { overrides = JSON.parse(localStorage.getItem(IMG_OVERRIDE_LS_KEY) || '{}'); } catch(e) {}
+    overrides[key] = dataUrl;
+    try {
+        localStorage.setItem(IMG_OVERRIDE_LS_KEY, JSON.stringify(overrides));
+    } catch(e) {
+        alert('本機儲存空間不足，這張照片可能無法永久保存，建議換一張較小的圖片再試一次。');
+    }
+}
+
+function handlePhotoUpload(input, ing, brand) {
+    const file = input.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { alert('請選擇圖片檔案'); input.value = ''; return; }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            // 縮小成最大 200px、統一轉成 JPEG，避免佔用太多本機儲存空間
+            const maxSize = 200;
+            let w = img.width, h = img.height;
+            if (w >= h && w > maxSize) { h = Math.round(h * maxSize / w); w = maxSize; }
+            else if (h > w && h > maxSize) { w = Math.round(w * maxSize / h); h = maxSize; }
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, w, h);
+            ctx.drawImage(img, 0, 0, w, h);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+            const key = `${BRAND_DATA[brand].imgPrefix}-${String(ing).padStart(2,'0')}`;
+            IMG_MAP[key] = dataUrl;
+            saveImageOverride(key, dataUrl);
+            applyPhotoEverywhere(brand, ing, dataUrl);
+        };
+        img.onerror = function() { alert('圖片讀取失敗，請換一張試試'); };
+        img.src = e.target.result;
+    };
+    reader.onerror = function() { alert('讀取檔案失敗'); };
+    reader.readAsDataURL(file);
+    input.value = '';
+}
+
+// 把新照片套用到畫面上目前顯示中的所有地方（不重繪整張表，避免洗掉庫存輸入值、優先度等已選設定）
+function applyPhotoEverywhere(brand, ing, dataUrl) {
+    document.querySelectorAll(`#page-${brand} img[alt="#${ing}"]`).forEach(imgEl => { imgEl.src = dataUrl; });
+
+    // 原本沒有照片的原料，庫存卡片顯示的是「無圖」佔位文字，這裡第一次上傳時要補插入 <img>
+    const stockInput = document.getElementById(`stock-${ing}-${brand}`);
+    const wrap = stockInput?.closest('.stock-item')?.querySelector('.stock-thumb-wrap');
+    if (wrap && !wrap.querySelector('img')) {
+        const placeholder = wrap.querySelector('.stock-thumb');
+        const newImg = document.createElement('img');
+        newImg.className = 'stock-thumb';
+        newImg.src = dataUrl;
+        newImg.alt = `#${ing}`;
+        if (placeholder) placeholder.replaceWith(newImg);
+    }
 }
 
 function initIngGrid(brand) {
@@ -3338,7 +3423,12 @@ function exportFullBackup() {
         alert('目前沒有任何已儲存的資料可以匯出');
         return;
     }
-    const blob = new Blob([raw], { type: 'application/json' });
+    let imageOverrides = {};
+    try { imageOverrides = JSON.parse(localStorage.getItem(IMG_OVERRIDE_LS_KEY) || '{}'); } catch(e) {}
+
+    // 打包成 { state, imageOverrides } 一起匯出，這樣換裝置時自己上傳過的原料照片也會一併帶過去
+    const bundle = { __backupFormat: 2, state: JSON.parse(raw), imageOverrides };
+    const blob = new Blob([JSON.stringify(bundle)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     const now = new Date();
@@ -3358,7 +3448,12 @@ function importFullBackup(input) {
     reader.onload = function(e) {
         try {
             const parsed = JSON.parse(e.target.result);
-            if (!parsed || typeof parsed !== 'object' || !parsed.brands || !parsed.brands.lf) {
+            // 支援新格式（含照片：{state, imageOverrides}）跟舊格式（直接就是 state 本身）
+            const isNewFormat = parsed && typeof parsed === 'object' && parsed.state;
+            const stateObj = isNewFormat ? parsed.state : parsed;
+            const imageOverrides = isNewFormat ? (parsed.imageOverrides || {}) : null;
+
+            if (!stateObj || typeof stateObj !== 'object' || !stateObj.brands || !stateObj.brands.lf) {
                 alert('這個檔案格式不正確，不是本系統匯出的備份檔');
                 input.value = '';
                 return;
@@ -3369,8 +3464,11 @@ function importFullBackup(input) {
                 input.value = '';
                 return;
             }
-            localStorage.setItem(LS_KEY, JSON.stringify(parsed));
-            pushStateToFirebase(parsed, true);
+            localStorage.setItem(LS_KEY, JSON.stringify(stateObj));
+            if (imageOverrides) {
+                try { localStorage.setItem(IMG_OVERRIDE_LS_KEY, JSON.stringify(imageOverrides)); } catch(errImg) {}
+            }
+            pushStateToFirebase(stateObj, true);
             location.reload();
         } catch(err) {
             alert('讀取失敗，請確認選擇的是正確的備份 .json 檔案');
@@ -3476,6 +3574,7 @@ function clearState() {
 document.addEventListener('change', saveState);
 document.addEventListener('input', saveState);
 
+loadImageOverrides();
 ['lf','des','yt','le'].forEach(brand => {
     initStock(brand);
     initIngGrid(brand);

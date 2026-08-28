@@ -1782,62 +1782,18 @@ function toggleRefGrid(brand) {
 function initTable(brand) {
     const tbody = document.getElementById(`prod-list-body-${brand}`);
     const products = BRAND_DATA[brand].products;
-    const prefix = BRAND_DATA[brand].imgPrefix;
-    const isWeightBased = !!BRAND_DATA[brand].isWeightBased;
     if (products.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#aaa;font-family:var(--mono);font-size:11px;padding:14px 0;">// 尚無預設商品，請在「自訂商品」分頁新增</td></tr>`;
         return;
     }
     tbody.innerHTML = products.map(p => {
-        let recipeImgsHtml;
-
-        if (isWeightBased) {
-            // 克數配方：直接列出 #原料=克數，不展開圖示矩陣（克數可能是小數）
-            const entries = Object.entries(p.req).filter(([,v]) => v > 0);
-            const recipeLine = entries.map(([ing,g]) => `#${ing}<span style="opacity:.55;">=${Math.round(g*100)/100}g</span>`).join('　');
-            recipeImgsHtml = `<div class="prod-recipe-text" style="font-family:var(--mono);font-size:10px;line-height:1.6;margin-top:4px;">${recipeLine}</div>`;
-        } else {
-            const order = p.reqOrder || Object.entries(p.req).flatMap(([ing,qty]) => Array(Math.max(0, Math.round(qty))).fill(Number(ing)));
-            if (p.splitGroups) {
-                let cursor = 0;
-                const groupsHtml = p.splitGroups.map(g => {
-                    const slice = order.slice(cursor, cursor + g.count);
-                    cursor += g.count;
-                    const imgs = slice.map(ing => {
-                        const src = IMG_MAP[`${prefix}-${String(ing).padStart(2,'0')}`] || '';
-                        return src ? `<img src="${src}" alt="#${ing}">` : '';
-                    }).join('');
-                    const { cols } = calcComboGrid(slice.length);
-                    const numHtml = slice.map(ing => `<span>${ing}</span>`).join('');
-                    return `<div class="prod-recipe-group">
-                        <div class="prod-recipe-group-label">${g.label}</div>
-                        <div class="custom-item-visual-stacked">
-                            <div class="prod-recipe-imgs" style="grid-template-columns:repeat(${cols},var(--cell-size,18px));">${imgs}</div>
-                            <div class="custom-item-index" style="grid-template-columns:repeat(${cols},var(--cell-size,18px));">${numHtml}</div>
-                        </div>
-                    </div>`;
-                }).join('');
-                recipeImgsHtml = `<div class="prod-recipe-groups">${groupsHtml}</div>`;
-            } else {
-                const imgs = order.map(ing => {
-                    const src = IMG_MAP[`${prefix}-${String(ing).padStart(2,'0')}`] || '';
-                    return src ? `<img src="${src}" alt="#${ing}">` : '';
-                }).join('');
-                const { cols } = calcComboGrid(order.length);
-                const numHtml = order.map(ing => `<span>${ing}</span>`).join('');
-                recipeImgsHtml = `<div class="custom-item-visual">
-                    <div class="prod-recipe-imgs" style="grid-template-columns:repeat(${cols},var(--cell-size,18px));">${imgs}</div>
-                    <div class="custom-item-index" style="grid-template-columns:repeat(${cols},var(--cell-size,18px));">${numHtml}</div>
-                </div>`;
-            }
-        }
-
+        const recipeImgsHtml = buildPresetRecipeCellHtml(p, brand);
         const { total: costTotal, hasAllPrices } = calcProductCost(p.req, brand);
 
         let opts = Array.from({length:15},(_,i)=>`<option value="${i+1}">第 ${i+1}</option>`).join('');
         opts += `<option value="skip" selected>🚫 不生産</option>`;
         return `<tr>
-            <td data-label="商品名稱"><div class="prod-name">${p.name}</div>${recipeImgsHtml}</td>
+            <td data-label="商品名稱"><div class="prod-name">${p.name}</div><div id="preset-recipe-${p.id}-${brand}">${recipeImgsHtml}</div></td>
             <td data-label="售價">
                 <input type="number" class="qty-input prod-price-input" id="price-${p.id}-${brand}" value="${p.price || ''}" placeholder="0" min="0"
                     onchange="updateProductPrice('${p.id}', '${brand}', this.value)">
@@ -1851,6 +1807,54 @@ function initTable(brand) {
             <td data-label="優先度"><select id="prio-${p.id}-${brand}" class="prio-select skip-mode" onchange="updateSelectStyle('${p.id}', '${brand}')">${opts}</select></td>
         </tr>`;
     }).join('');
+}
+
+// 產生單一預設商品的配方圖片區塊 HTML（原料圖點擊可替換），initTable 跟單一更新都共用這段邏輯
+function buildPresetRecipeCellHtml(p, brand) {
+    const prefix = BRAND_DATA[brand].imgPrefix;
+    const isWeightBased = !!BRAND_DATA[brand].isWeightBased;
+
+    if (isWeightBased) {
+        // 克數配方：直接列出 #原料=克數，不展開圖示矩陣（克數可能是小數）
+        const entries = Object.entries(p.req).filter(([,v]) => v > 0);
+        const recipeLine = entries.map(([ing,g]) => `#${ing}<span style="opacity:.55;">=${Math.round(g*100)/100}g</span>`).join('　');
+        return `<div class="prod-recipe-text" style="font-family:var(--mono);font-size:10px;line-height:1.6;margin-top:4px;">${recipeLine}</div>`;
+    }
+
+    const order = p.reqOrder || Object.entries(p.req).flatMap(([ing,qty]) => Array(Math.max(0, Math.round(qty))).fill(Number(ing)));
+    if (p.splitGroups) {
+        let cursor = 0;
+        const groupsHtml = p.splitGroups.map(g => {
+            const startIdx = cursor;
+            const slice = order.slice(cursor, cursor + g.count);
+            cursor += g.count;
+            const imgs = slice.map((ing, localIdx) => {
+                const src = IMG_MAP[`${prefix}-${String(ing).padStart(2,'0')}`] || '';
+                return src ? `<img src="${src}" alt="#${ing}" title="點擊替換此原料" onclick="replacePresetIngredientSlot('${p.id}', ${startIdx + localIdx}, '${brand}')">` : '';
+            }).join('');
+            const { cols } = calcComboGrid(slice.length);
+            const numHtml = slice.map(ing => `<span>${ing}</span>`).join('');
+            return `<div class="prod-recipe-group">
+                <div class="prod-recipe-group-label">${g.label}</div>
+                <div class="custom-item-visual-stacked">
+                    <div class="prod-recipe-imgs" style="grid-template-columns:repeat(${cols},var(--cell-size,18px));">${imgs}</div>
+                    <div class="custom-item-index" style="grid-template-columns:repeat(${cols},var(--cell-size,18px));">${numHtml}</div>
+                </div>
+            </div>`;
+        }).join('');
+        return `<div class="prod-recipe-groups">${groupsHtml}</div>`;
+    }
+
+    const imgs = order.map((ing, idx) => {
+        const src = IMG_MAP[`${prefix}-${String(ing).padStart(2,'0')}`] || '';
+        return src ? `<img src="${src}" alt="#${ing}" title="點擊替換此原料" onclick="replacePresetIngredientSlot('${p.id}', ${idx}, '${brand}')">` : '';
+    }).join('');
+    const { cols } = calcComboGrid(order.length);
+    const numHtml = order.map(ing => `<span>${ing}</span>`).join('');
+    return `<div class="custom-item-visual">
+        <div class="prod-recipe-imgs" style="grid-template-columns:repeat(${cols},var(--cell-size,18px));">${imgs}</div>
+        <div class="custom-item-index" style="grid-template-columns:repeat(${cols},var(--cell-size,18px));">${numHtml}</div>
+    </div>`;
 }
 
 function updateProductPrice(pid, brand, val) {
@@ -2007,6 +2011,36 @@ function replaceCustomIngredientSlot(cid, slotIndex, brand) {
         order.forEach(ing => { newReq[ing] = (newReq[ing] || 0) + 1; });
         p.req = newReq;
         renderCustomList(brand);
+        saveState();
+    });
+}
+
+// 預設商品也能點圖片替換原料（新增功能），用法跟自訂商品一樣，改在 data.products 裡的固定商品上
+function replacePresetIngredientSlot(pid, slotIndex, brand) {
+    const data = BRAND_DATA[brand];
+    const p = data.products.find(x => x.id === pid);
+    if (!p) return;
+    const order = p.reqOrder
+        ? [...p.reqOrder]
+        : Object.entries(p.req).flatMap(([ing, qty]) => Array(Math.max(0, Math.round(qty))).fill(Number(ing)));
+    const currentIng = order[slotIndex];
+
+    openIngPicker(brand, currentIng, (newIng) => {
+        order[slotIndex] = newIng;
+        p.reqOrder = order;
+        const newReq = {};
+        order.forEach(ing => { newReq[ing] = (newReq[ing] || 0) + 1; });
+        p.req = newReq;
+
+        // 只更新這一列的配方圖片區塊，不重繪整張表，避免洗掉其他商品已選的優先度／指定量
+        const cell = document.getElementById(`preset-recipe-${p.id}-${brand}`);
+        if (cell) cell.innerHTML = buildPresetRecipeCellHtml(p, brand);
+        const costEl = document.getElementById(`cost-${p.id}-${brand}`);
+        if (costEl) {
+            const { total: costTotal, hasAllPrices } = calcProductCost(p.req, brand);
+            costEl.textContent = hasAllPrices ? '成本¥'+costTotal.toLocaleString() : '成本未知';
+        }
+        renderBoxTypeSelector(brand);
         saveState();
     });
 }

@@ -1201,7 +1201,7 @@
 
 <!-- 自訂商品配方放大檢視彈窗（新增功能） -->
 <div class="ing-picker-overlay" id="image-zoom-overlay" onclick="if(event.target===this) closeImageZoom()">
-    <div class="ing-picker-modal" style="max-width:640px;">
+    <div class="ing-picker-modal" style="max-width:600px;">
         <div class="ing-picker-head">
             <span class="ing-picker-title" id="image-zoom-title">🔍 配方放大檢視</span>
             <button class="ing-picker-close" onclick="closeImageZoom()">✕</button>
@@ -1974,15 +1974,14 @@ function openImageZoom(cid, brand) {
 
     document.getElementById('image-zoom-title').textContent = `🔍 ${p.name} 配方放大檢視`;
     const grid = document.getElementById('image-zoom-grid');
-    const { cols: rawCols } = calcComboGrid(order.length);
-    const cols = Math.min(rawCols, 3); // 每項改成橫向排列（圖+編號並排），欄位變寬，每排最多3個
-    grid.style.gridTemplateColumns = `repeat(${cols}, 150px)`;
+    const { cols } = calcComboGrid(order.length); // 跟你排的格子完全一樣，5個一排就是一排
+    grid.style.gridTemplateColumns = `repeat(${cols}, 90px)`;
     grid.innerHTML = order.map(ing => {
         const src = IMG_MAP[`${prefix}-${String(ing).padStart(2,'0')}`] || '';
         const thumb = src ? `<img class="ing-picker-thumb" style="width:90px;height:90px;" src="${src}" alt="#${ing}">` : `<div class="ing-picker-thumb" style="width:90px;height:90px;"></div>`;
-        return `<div class="ing-picker-item" style="cursor:default;flex-direction:row;align-items:center;justify-content:flex-start;gap:6px;">
+        return `<div class="ing-picker-item" style="cursor:default;position:relative;padding:0;border:none;display:block;">
             ${thumb}
-            <div class="ing-picker-num" style="font-size:14px;">#${ing}</div>
+            <div class="ing-picker-num" style="position:absolute;top:3px;right:3px;background:rgba(0,0,0,0.75);color:#fff;padding:1px 5px;border-radius:3px;font-size:11px;">#${ing}</div>
         </div>`;
     }).join('');
     document.getElementById('image-zoom-overlay').classList.add('open');

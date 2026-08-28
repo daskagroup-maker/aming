@@ -1974,14 +1974,15 @@ function openImageZoom(cid, brand) {
 
     document.getElementById('image-zoom-title').textContent = `🔍 ${p.name} 配方放大檢視`;
     const grid = document.getElementById('image-zoom-grid');
-    const { cols } = calcComboGrid(order.length);
-    grid.style.gridTemplateColumns = `repeat(${cols}, 90px)`;
+    const { cols: rawCols } = calcComboGrid(order.length);
+    const cols = Math.min(rawCols, 3); // 每項改成橫向排列（圖+編號並排），欄位變寬，每排最多3個
+    grid.style.gridTemplateColumns = `repeat(${cols}, 150px)`;
     grid.innerHTML = order.map(ing => {
         const src = IMG_MAP[`${prefix}-${String(ing).padStart(2,'0')}`] || '';
         const thumb = src ? `<img class="ing-picker-thumb" style="width:90px;height:90px;" src="${src}" alt="#${ing}">` : `<div class="ing-picker-thumb" style="width:90px;height:90px;"></div>`;
-        return `<div class="ing-picker-item" style="cursor:default;">
+        return `<div class="ing-picker-item" style="cursor:default;flex-direction:row;align-items:center;justify-content:flex-start;gap:6px;">
             ${thumb}
-            <div class="ing-picker-num" style="font-size:13px;">#${ing}</div>
+            <div class="ing-picker-num" style="font-size:14px;">#${ing}</div>
         </div>`;
     }).join('');
     document.getElementById('image-zoom-overlay').classList.add('open');

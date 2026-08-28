@@ -1610,10 +1610,8 @@ function reorderComboByDrag(srcUid, targetUid, brand) {
     const fromIdx = data.comboOrder.findIndex(s => s.uid === srcUid);
     const toIdx = data.comboOrder.findIndex(s => s.uid === targetUid);
     if (fromIdx === -1 || toIdx === -1) return;
-    // 用「搬移」而不是「交換」：把這一顆抽出來插到目標位置，其他顆自動往旁邊挪，
-    // 這樣同原料選兩顆時，才能只單獨移動其中一顆
-    const [moved] = data.comboOrder.splice(fromIdx, 1);
-    data.comboOrder.splice(toIdx, 0, moved);
+    // 直接互換兩顆的位置，其他顆完全不動
+    [data.comboOrder[fromIdx], data.comboOrder[toIdx]] = [data.comboOrder[toIdx], data.comboOrder[fromIdx]];
     renderComboPreview(brand);
 }
 

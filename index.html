@@ -1199,6 +1199,17 @@
     </div>
 </div>
 
+<!-- 自訂商品配方放大檢視彈窗（新增功能） -->
+<div class="ing-picker-overlay" id="image-zoom-overlay" onclick="if(event.target===this) closeImageZoom()">
+    <div class="ing-picker-modal" style="max-width:640px;">
+        <div class="ing-picker-head">
+            <span class="ing-picker-title" id="image-zoom-title">🔍 配方放大檢視</span>
+            <button class="ing-picker-close" onclick="closeImageZoom()">✕</button>
+        </div>
+        <div class="ing-picker-grid" id="image-zoom-grid" style="grid-template-columns:repeat(auto-fill, minmax(90px, 1fr));"></div>
+    </div>
+</div>
+
 <!-- Excel 欄位對應設定彈窗（新增功能） -->
 <div class="excel-map-overlay" id="excel-map-overlay" onclick="if(event.target===this) closeExcelMapModal()">
     <div class="excel-map-modal">
@@ -1953,6 +1964,31 @@ function selectIngFromPicker(newIng) {
     closeIngPicker();
 }
 
+// 放大檢視自訂商品的配方圖片（新增功能），方便給人一眼看清楚每一顆原料
+function openImageZoom(cid, brand) {
+    const data = BRAND_DATA[brand];
+    const p = data.customProducts.find(x => x.id === cid);
+    if (!p) return;
+    const prefix = data.imgPrefix;
+    const order = p.reqOrder || Object.entries(p.req).flatMap(([ing,qty]) => Array(Math.max(0, Math.round(qty))).fill(Number(ing)));
+
+    document.getElementById('image-zoom-title').textContent = `🔍 ${p.name} 配方放大檢視`;
+    const grid = document.getElementById('image-zoom-grid');
+    grid.innerHTML = order.map(ing => {
+        const src = IMG_MAP[`${prefix}-${String(ing).padStart(2,'0')}`] || '';
+        const thumb = src ? `<img class="ing-picker-thumb" style="width:90px;height:90px;" src="${src}" alt="#${ing}">` : `<div class="ing-picker-thumb" style="width:90px;height:90px;"></div>`;
+        return `<div class="ing-picker-item" style="cursor:default;">
+            ${thumb}
+            <div class="ing-picker-num" style="font-size:13px;">#${ing}</div>
+        </div>`;
+    }).join('');
+    document.getElementById('image-zoom-overlay').classList.add('open');
+}
+
+function closeImageZoom() {
+    document.getElementById('image-zoom-overlay').classList.remove('open');
+}
+
 function replaceCustomIngredientSlot(cid, slotIndex, brand) {
     const data = BRAND_DATA[brand];
     const p = data.customProducts.find(x => x.id === cid);
@@ -2512,7 +2548,9 @@ function renderCustomList(brand) {
         return `<div class="custom-item">
             <div class="custom-item-main">
                 <div style="flex:1;">
-                    <div class="custom-item-name">✏️ ${p.name} <span style="font-family:var(--mono);font-size:9px;color:#999;">裝箱數量:${p.boxSize} 售價:${p.price>0?'¥'+p.price:'—'} ${costStr}${profitStr}</span></div>
+                    <div class="custom-item-name">✏️ ${p.name}
+                        <button type="button" onclick="openImageZoom('${p.id}', '${brand}')" title="放大檢視配方圖片" style="font-family:var(--mono);font-size:9px;padding:2px 7px;background:var(--cream);border:1px solid var(--border);border-radius:2px;cursor:pointer;color:#666;vertical-align:middle;">🔍 放大</button>
+                        <span style="font-family:var(--mono);font-size:9px;color:#999;">裝箱數量:${p.boxSize} 售價:${p.price>0?'¥'+p.price:'—'} ${costStr}${profitStr}</span></div>
                     <div class="custom-item-visual">
                         ${recipeImgsHtml}
                         ${indexGridHtml}

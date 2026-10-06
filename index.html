@@ -1189,14 +1189,14 @@
         <!-- LEM 剩料試算（獨立計算模式，不影響上方分配） -->
         <div class="card">
             <div class="card-head" style="border-bottom-color:var(--teal);">
-                <div class="card-head-num" style="color:var(--teal);">05</div>
+                <div class="card-head-num" style="color:var(--teal);">02c</div>
                 <div>
                     <div class="card-head-title">LEM 剩料試算</div>
                     <div class="card-head-sub">LEFTOVER MIX CALCULATOR</div>
                 </div>
             </div>
             <div class="card-body">
-                <p class="hint-text">// 獨立計算，不影響上方分配。每包重量為 規格~規格+3g（例 80~83g，可改）。按「帶入目前庫存」會依剩料自動帶每種的最少~最多：最少合計＝80g、最多合計＝83g，每種放在範圍內整包就一定在 80~83g。可做包數以「最多」計算，保證夠用。</p>
+                <p class="hint-text">// 獨立計算，不影響上方分配。左邊勾選＝這次要放的巧克力（80g/115g 的 #14 預設不放）。每包重量為 規格~規格+3g（例 80~83g，可改）。按「帶入目前庫存」會依剩料自動帶每種的最少~最多：最少合計＝80g、最多合計＝83g，每種放在範圍內整包就一定在 80~83g。可做包數以「最多」計算，保證夠用。</p>
                 <div id="lem-calc-wrap"></div>
             </div>
         </div>
@@ -1426,8 +1426,8 @@ const BRAND_DATA = {
             { id:'lera100', name:'LERa100', price:0, boxSize:1, targetWeight:100, req:{1:100} },
             { id:'leor25', name:'LEOr25', price:0, boxSize:1, targetWeight:25, req:{10:25} },
             { id:'leor50', name:'LEOr50', price:0, boxSize:1, targetWeight:50, req:{10:50} },
-            { id:'lem80', name:'LEM 80g', price:0, boxSize:1, targetWeight:80, isMix:true, mixIngredients:[1,2,3,5,6,7,9,10,11,12], req:{1:8,2:8,3:8,5:8,6:8,7:8,9:8,10:8,11:8,12:8} },
-            { id:'lem115', name:'LEM 115g', price:0, boxSize:1, targetWeight:115, isMix:true, mixIngredients:[1,2,3,5,6,7,9,10,11,12], req:{1:11.5,2:11.5,3:11.5,5:11.5,6:11.5,7:11.5,9:11.5,10:11.5,11:11.5,12:11.5} },
+            { id:'lem80', name:'LEM 80g', price:0, boxSize:1, targetWeight:80, isMix:true, mixIngredients:[1,2,3,5,6,7,9,10,11,12,14], defaultOff:[14], req:{1:8,2:8,3:8,5:8,6:8,7:8,9:8,10:8,11:8,12:8,14:0} },
+            { id:'lem115', name:'LEM 115g', price:0, boxSize:1, targetWeight:115, isMix:true, mixIngredients:[1,2,3,5,6,7,9,10,11,12,14], defaultOff:[14], req:{1:11.5,2:11.5,3:11.5,5:11.5,6:11.5,7:11.5,9:11.5,10:11.5,11:11.5,12:11.5,14:0} },
             { id:'lem180', name:'LEM 180g', price:0, boxSize:1, targetWeight:180, isMix:true, mixIngredients:[1,2,3,5,6,7,9,10,11,12,14], req:{1:180/11,2:180/11,3:180/11,5:180/11,6:180/11,7:180/11,9:180/11,10:180/11,11:180/11,12:180/11,14:180/11} },
             { id:'lem250', name:'LEM 250g', price:0, boxSize:1, targetWeight:250, isMix:true, mixIngredients:[1,2,3,5,6,7,9,10,11,12,14], req:{1:250/11,2:250/11,3:250/11,5:250/11,6:250/11,7:250/11,9:250/11,10:250/11,11:250/11,12:250/11,14:250/11} },
         ],
@@ -1494,7 +1494,7 @@ function initStock(brand) {
                 </label>
             </div>
             <div class="stock-main">
-                <div class="stock-num">#${i}${unit ? ` <span style="opacity:.5;font-size:9px;">(${unit})</span>` : ''}</div>
+                <div class="stock-num">${ingLbl(i, brand)}${ingName(i, brand) ? ` <span style="font-size:10px;">${ingName(i, brand)}</span>` : ''}${unit ? ` <span style="opacity:.5;font-size:9px;">(${unit})</span>` : ''}</div>
                 <input type="number" class="stock-input" id="stock-${i}-${brand}" value="0" min="0" step="${step}" oninput="autoColorIngGrid('${brand}')">
             </div>
         </div>`;
@@ -1583,7 +1583,7 @@ function initIngGrid(brand) {
     document.getElementById(`ing-grid-${brand}`).innerHTML = validIngredients.map(i => `
         <div class="ing-check" id="ing-wrap-${i}-${brand}" onclick="toggleIng(${i}, '${brand}')">
             <input type="checkbox" id="ing-cb-${i}-${brand}" onclick="event.stopPropagation(); toggleIng(${i}, '${brand}')">
-            <span class="ing-check-label">#${i}</span>
+            <span class="ing-check-label">${ingFull(i, brand)}</span>
             <input type="number" id="ing-qty-${i}-${brand}" class="ing-check-qty" value="1" min="1"
                 style="display:none;" onclick="event.stopPropagation()" oninput="checkIngStock(${i}, '${brand}')">
         </div>`).join('');
@@ -1825,10 +1825,20 @@ function autoColorIngGrid(brand) {
 }
 
 // ── LEM 混合配方克數設定表（規格 x 原料，可編輯，需總和=目標重量）──
+// ── 原料顯示名稱：LE 用 LC 編號＋名字 ──
+const ING_NAMES = {
+    le: { 1:'葡萄', 2:'咖啡豆', 3:'無花果', 5:'爆米花-覆盆莓', 6:'Cereal-紫薯', 7:'爆米花-焦糖', 9:'咖啡奶', 10:'橘子', 11:'Cereal-茉莉花', 12:'Cereal-檸檬', 14:'綠蛋-杏仁檸檬' }
+};
+function ingLbl(i, brand) { return brand === 'le' ? `LC${i}` : `#${i}`; }
+function ingName(i, brand) { return (ING_NAMES[brand] || {})[i] || ''; }
+function ingFull(i, brand) { const n = ingName(i, brand); return ingLbl(i, brand) + (n ? ` ${n}` : ''); }
+
 function getLemRange(p, ing) {
     if (!p.range) p.range = {};
+    if (!p.range[ing] && (p.defaultOff || []).includes(ing)) p.range[ing] = [0, 0];   // 預設關閉（例：LEM80/115 的 #14）
     if (!p.range[ing]) {
-        const eq = p.targetWeight / p.mixIngredients.length;
+        const active = p.mixIngredients.filter(i => !(p.defaultOff || []).includes(i) || (p.range[i] && p.range[i][1] > 0));
+        const eq = p.targetWeight / active.length;
         p.range[ing] = [Math.round(eq*0.75*10)/10, Math.round(eq*1.25*10)/10];
     }
     return p.range[ing];
@@ -1846,7 +1856,7 @@ function renderLemMixTable() {
     let html = `<div style="overflow-x:auto;"><table class="lemmix-table">
         <thead><tr>
             <th>規格</th>
-            ${allIngs.map(i => `<th>#${i}<br><span style="font-weight:400;opacity:.6;">最少~最多</span></th>`).join('')}
+            ${allIngs.map(i => `<th>${ingLbl(i, 'le')}<br><span style="font-weight:400;">${ingName(i, 'le')}</span><br><span style="font-weight:400;opacity:.6;">最少~最多</span></th>`).join('')}
             <th>可組合範圍 / 目標</th>
         </tr></thead><tbody>`;
 
@@ -1896,7 +1906,7 @@ function setLemRangeAll(productId) {
     const mn = parseFloat(document.getElementById(`lemmix-qmin-${productId}`).value);
     const mx = parseFloat(document.getElementById(`lemmix-qmax-${productId}`).value);
     if (isNaN(mn) || isNaN(mx) || mn > mx) { alert('請輸入正確的最少 / 最多克數（最少不能大於最多）'); return; }
-    p.mixIngredients.forEach(i => { p.range = p.range || {}; p.range[i] = [mn, mx]; });
+    p.mixIngredients.forEach(i => { p.range = p.range || {}; const cur = getLemRange(p, i); if (cur[1] === 0 && cur[0] === 0) return; p.range[i] = [mn, mx]; });   // 關閉(0~0)的不套用
     renderLemMixTable();
     try { saveState(); } catch(e) {}
 }
@@ -1928,7 +1938,7 @@ function initRefGrid(brand) {
     grid.innerHTML = data.validIngredients.map(i => {
         const src = IMG_MAP[`${prefix}-${String(i).padStart(2,'0')}`] || '';
         const thumb = src ? `<img class="ref-thumb" src="${src}" alt="#${i}">` : '<div class="ref-thumb"></div>';
-        return `<div class="ref-item">${thumb}<div class="ref-num">#${i}</div></div>`;
+        return `<div class="ref-item">${thumb}<div class="ref-num">${ingFull(i, brand)}</div></div>`;
     }).join('');
 }
 
@@ -1980,7 +1990,7 @@ function buildPresetRecipeCellHtml(p, brand) {
     if (isWeightBased) {
         // 克數配方：直接列出 #原料=克數，不展開圖示矩陣（克數可能是小數）
         const entries = Object.entries(p.req).filter(([,v]) => v > 0);
-        const recipeLine = entries.map(([ing,g]) => `#${ing}<span style="opacity:.55;">=${Math.round(g*100)/100}g</span>`).join('　');
+        const recipeLine = entries.map(([ing,g]) => `${ingLbl(ing, brand)}<span style="opacity:.55;">=${Math.round(g*100)/100}g</span>`).join('　');
         return `<div class="prod-recipe-text" style="font-family:var(--mono);font-size:10px;line-height:1.6;margin-top:4px;">${recipeLine}</div>`;
     }
 
@@ -2115,7 +2125,7 @@ function openIngPicker(brand, currentIng, callback) {
         const isCurrent = i === currentIng;
         return `<div class="ing-picker-item" style="${isCurrent ? 'border-color:var(--accent);background:var(--cream);' : ''}" onclick="selectIngFromPicker(${i})">
             ${thumb}
-            <div class="ing-picker-num">#${i}${isCurrent ? ' (目前)' : ''}</div>
+            <div class="ing-picker-num">${ingFull(i, brand)}${isCurrent ? ' (目前)' : ''}</div>
         </div>`;
     }).join('');
     document.getElementById('ing-picker-overlay').classList.add('open');
@@ -2148,7 +2158,7 @@ function openImageZoom(cid, brand) {
         const thumb = src ? `<img class="ing-picker-thumb" style="width:90px;height:90px;" src="${src}" alt="#${ing}">` : `<div class="ing-picker-thumb" style="width:90px;height:90px;"></div>`;
         return `<div class="ing-picker-item" style="cursor:default;position:relative;padding:0;border:none;display:block;">
             ${thumb}
-            <div class="ing-picker-num" style="position:absolute;top:3px;right:3px;background:rgba(0,0,0,0.75);color:#fff;padding:1px 5px;border-radius:3px;font-size:11px;">#${ing}</div>
+            <div class="ing-picker-num" style="position:absolute;top:3px;right:3px;background:rgba(0,0,0,0.75);color:#fff;padding:1px 5px;border-radius:3px;font-size:11px;">${ingLbl(ing, brand)}</div>
         </div>`;
     }).join('');
     document.getElementById('image-zoom-overlay').classList.add('open');
@@ -2698,7 +2708,7 @@ function renderCustomList(brand) {
         const order = p.reqOrder || Object.entries(p.req).flatMap(([ing,qty]) => Array(Math.max(0, Math.round(qty))).fill(Number(ing)));
         const seen = [];
         order.forEach(ing => { if (!seen.includes(ing)) seen.push(ing); });
-        const recipeStr = seen.map(ing => `#${ing}×${p.req[ing]}`).join(' ');
+        const recipeStr = seen.map(ing => `${ingLbl(ing, brand)}×${p.req[ing]}`).join(' ');
 
         const imgs = order.map((ing, idx) => {
             const src = IMG_MAP[`${prefix}-${String(ing).padStart(2,'0')}`] || '';
@@ -2880,10 +2890,17 @@ function solveMix(p, stocks, capN) {
 // 每種巧克力的範圍：最少合計 = 目標、最多合計 = 目標+容許 → 每種都放在範圍內，整包一定落在 80~83g。
 // 可做包數以「最多」計算（保守），確保就算每種都放到上限也夠用。
 const LC_LS_KEY = 'lem_calc_v3';
-let lemCalc = { spec: 'lem80', stock: {}, range: {}, tol: {}, want: '' };
+let lemCalc = { spec: 'lem80', stock: {}, range: {}, tol: {}, off: {}, want: '' };
 try { const s = JSON.parse(localStorage.getItem(LC_LS_KEY) || 'null'); if (s) lemCalc = Object.assign(lemCalc, s); } catch(e) {}
 function lcSave() { try { localStorage.setItem(LC_LS_KEY, JSON.stringify(lemCalc)); } catch(e) {} }
 function lcSpec() { return BRAND_DATA.le.products.find(p => p.id === lemCalc.spec) || BRAND_DATA.le.products.find(p => p.isMix); }
+function lcOff() { const p = lcSpec(); if (!lemCalc.off[p.id]) lemCalc.off[p.id] = (p.defaultOff || []).slice(); return lemCalc.off[p.id]; }
+function lcToggle(ing, on) {
+    const off = lcOff(), k = off.indexOf(ing);
+    if (on && k >= 0) off.splice(k, 1);
+    if (!on && k < 0) off.push(ing);
+    lcSave(); lcAutoRange(true);
+}
 function lcTol() { const p = lcSpec(); return lemCalc.tol[p.id] ?? 3; }
 const lcR = v => Math.round(v * 10) / 10;
 
@@ -2918,7 +2935,8 @@ function lcAutoRange(silent, noRender) {
     const lo = Math.round((isNaN(qmin) ? eq * 0.5 : qmin) * 10), hi = Math.round((isNaN(qmax) ? eq * 1.5 : qmax) * 10);
     const st = {}; ings.forEach(i => st[i] = lemCalc.stock[i] || 0);
     const anyStock = ings.some(i => st[i] > 0);
-    const have = anyStock ? ings.filter(i => st[i] > 0) : ings.slice();
+    const off = lcOff();
+    const have = (anyStock ? ings.filter(i => st[i] > 0) : ings.slice()).filter(i => !off.includes(i));
     const w = {}; have.forEach(i => w[i] = anyStock ? st[i] : 1);
     if (have.length * lo > T10 || have.length * hi < T10 + tol10) {
         if (!silent) alert(`上下限 ${lo/10}~${hi/10}g × ${have.length} 種，湊不到 ${p.targetWeight}~${p.targetWeight + lcTol()}g，請調整「全部範圍」`);
@@ -2933,8 +2951,8 @@ function lcAutoRange(silent, noRender) {
     lemCalc.range[p.id] = r;
     lcSave();
     if (!noRender) renderLemCalc();
-    const out = ings.filter(i => !have.includes(i));
-    if (out.length && !silent) alert(`沒有剩料的 ${out.map(i => '#' + i).join('、')} 這次設為 0g（不放）`);
+    const out = ings.filter(i => !have.includes(i) && !off.includes(i));
+    if (out.length && !silent) alert(`沒有剩料的 ${out.map(i => ingFull(i, 'le')).join('、')} 這次設為 0g（不放）`);
 }
 
 function lcFrom02b() {
@@ -2991,11 +3009,13 @@ function renderLemCalc() {
             <button class="lc-btn" onclick="lcTo02b()">⬆ 範圍套用到 02b</button>
         </div>
         <div style="overflow-x:auto;"><table class="lc-table">
-            <thead><tr><th>巧克力</th><th>剩餘 (g)</th><th>每包 最少~最多 (g)</th><th>可撐包數</th><th>做完至少剩 (g)</th><th>想做需要 (g)</th></tr></thead>
+            <thead><tr><th>放</th><th>巧克力</th><th>剩餘 (g)</th><th>每包 最少~最多 (g)</th><th>可撐包數</th><th>做完至少剩 (g)</th><th>想做需要 (g)</th></tr></thead>
             <tbody>${p.mixIngredients.map(i => {
                 const src = IMG_MAP[`le-${String(i).padStart(2,'0')}`] || '';
-                return `<tr id="lc-row-${i}">
-                    <td>${src ? `<img src="${src}" alt="#${i}">` : ''}#${i}</td>
+                const isOff = lcOff().includes(i);
+                return `<tr id="lc-row-${i}" style="${isOff ? 'opacity:.4;' : ''}">
+                    <td><input type="checkbox" style="width:auto;" ${isOff ? '' : 'checked'} onchange="lcToggle(${i}, this.checked)"></td>
+                    <td>${src ? `<img src="${src}" alt="#${i}">` : ''}${ingFull(i, 'le')}</td>
                     <td><input type="number" step="0.1" min="0" value="${lemCalc.stock[i] ?? ''}" placeholder="0" oninput="lcInput('stock', ${i}, this.value)"></td>
                     <td style="white-space:nowrap;"><input type="number" step="0.1" min="0" style="width:52px;" value="${r[i][0]}" oninput="lcInput('min', ${i}, this.value)">
                         ~ <input type="number" step="0.1" min="0" style="width:52px;" value="${r[i][1]}" oninput="lcInput('max', ${i}, this.value)"></td>
@@ -3035,12 +3055,12 @@ function lcUpdate() {
     let wantHtml = '';
     if (want > 0) {
         const lack = used.map(i => [i, lcR(r[i][1] * want - st[i])]).filter(x => x[1] > 0);
-        wantHtml = `<div><div class="lc-lab">想做 ${want} 包</div><div class="lc-val ${lack.length ? 'warn' : ''}">${lack.length ? '✕ 要補：' + lack.map(x => `#${x[0]} ${x[1]}g`).join('、') : '✓ 夠'}</div></div>`;
+        wantHtml = `<div><div class="lc-lab">想做 ${want} 包</div><div class="lc-val ${lack.length ? 'warn' : ''}">${lack.length ? '✕ 要補：' + lack.map(x => `${ingLbl(x[0], 'le')} ${x[1]}g`).join('、') : '✓ 夠'}</div></div>`;
     }
     document.getElementById('lc-summary').innerHTML = `
         <div><div class="lc-lab">可做（每種放到最多也夠）</div><div><span class="lc-big">${N}</span> <span class="lc-val">包</span></div></div>
         <div><div class="lc-lab">每包合計 / 規格 ${T}~${U}g</div><div class="lc-val ${rangeWarn ? 'warn' : ''}">${rangeMsg}</div></div>
-        <div><div class="lc-lab">卡在</div><div class="lc-val">${bott.length && used.length ? bott.map(i => '#' + i).join('、') : '—'}${No > N ? `（若都放最少可到 ${No} 包）` : ''}</div></div>
+        <div><div class="lc-lab">卡在</div><div class="lc-val">${bott.length && used.length ? bott.map(i => ingFull(i, 'le')).join('、') : '—'}${No > N ? `（若都放最少可到 ${No} 包）` : ''}</div></div>
         ${wantHtml}`;
 }
 
@@ -3110,10 +3130,10 @@ function renderCapacity(brand) {
         let sub = '';
         if (bottleneck != null) {
             const left = fmt((stocks[bottleneck] || 0) - (perUnit[bottleneck] || 0) * n);
-            sub = `瓶頸 #${bottleneck}（庫存 ${fmt(stocks[bottleneck] || 0)}${unit}，做完剩 ${left}${unit}）`;
+            sub = `瓶頸 ${ingFull(bottleneck, brand)}（庫存 ${fmt(stocks[bottleneck] || 0)}${unit}，做完剩 ${left}${unit}）`;
         }
         if (isLE && p.isMix && n > 0) {
-            sub += `<br>每包：${Object.entries(perUnit).map(([i, g]) => `#${i} ${g}g`).join('・')}`;
+            sub += `<br>每包：${Object.entries(perUnit).map(([i, g]) => `${ingLbl(i, 'le')} ${g}g`).join('・')}`;
         }
         if (note) sub += `<br><span style="color:var(--warn);">${note}</span>`;
         return `<div class="cap-row${n > 0 ? '' : ' zero'}">
@@ -3256,7 +3276,7 @@ function renderReport(remainStocks, plan, total, brand) {
         let val = Math.max(0, remainStocks[i]||0);
         val = brand === 'le' ? Math.round(val*10)/10 : val;
         return `<div class="remain-item ok">
-            <div class="remain-item-label">#${i}</div>
+            <div class="remain-item-label">${ingLbl(i, brand)}</div>
             <div class="remain-item-val">${val}</div>
         </div>`;
     }).join('');
@@ -3343,7 +3363,7 @@ function renderReport(remainStocks, plan, total, brand) {
                     <span class="plan-pct">${item.rev>0?pct+'%':''}</span>
                 </div>
                 <div class="plan-bar-wrap"><div class="plan-bar" style="width:${pct}%"></div></div>
-                ${item.mixDetail ? `<div class="plan-mix-detail">每包：${Object.entries(item.mixDetail).map(([i,g]) => `#${i} ${g}g`).join('・')}<br>共用：${Object.entries(item.mixDetail).map(([i,g]) => `#${i} ${Math.round(g*item.qty*10)/10}g`).join('・')}</div>` : ''}
+                ${item.mixDetail ? `<div class="plan-mix-detail">每包：${Object.entries(item.mixDetail).map(([i,g]) => `${ingLbl(i, 'le')} ${g}g`).join('・')}<br>共用：${Object.entries(item.mixDetail).map(([i,g]) => `${ingLbl(i, 'le')} ${Math.round(g*item.qty*10)/10}g`).join('・')}</div>` : ''}
                 ${boxStockInfo}
             </div>`;
         }).join('');

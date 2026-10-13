@@ -3423,6 +3423,122 @@ function setAllocMode(brand, mode) {
     saveState();
 }
 
+// ── 剩餘原料自己安排：每款填「我要做」，即時算還能加幾個、原料剩多少 ──
+function moreActiveProducts(brand) {
+    const data = BRAND_DATA[brand];
+    return [
+        ...data.products.filter(p => { const s = document.getElementById(`prio-${p.id}-${brand}`); return !s || s.value !== 'skip'; }),
+        ...data.customProducts.filter(p => p.currentPriority !== 'skip'),
+    ].sort((a, b) => pieceCount(b) - pieceCount(a));
+}
+
+function calcMorePlan(brand) {
+    const data = BRAND_DATA[brand];
+    const plan = data.morePlan || {};
+    const work = { ...(data.lastRemainStocks || {}) };
+    const bl = { ...(data.lastBoxLeft || {}) };
+    const items = moreActiveProducts(brand).map(p => ({ ...p }));
+    let total = 0;
+    const boxOver = {};
+    items.forEach(p => {
+        const q = plan[p.id] || 0;
+        if (!(q > 0)) return;
+        if (data.isWeightBased && p.isMix) { const r = solveMix(p, work, q); if (r.perUnit) p.req = r.perUnit; }
+        deductStock(p, q, work);
+        const k = p.boxTypeId || p.id;
+        if (bl[k] != null) { bl[k] -= q; if (bl[k] < 0) boxOver[k] = true; }
+        total += q;
+    });
+    const canAdd = {};
+    items.forEach(p => {
+        const k = p.boxTypeId || p.id;
+        const cap = bl[k] != null ? Math.max(0, bl[k]) : Infinity;
+        let n;
+        if (data.isWeightBased && p.isMix) n = Math.min(solveMix(p, work, Infinity).n || 0, cap);
+        else n = Math.min(maxProducible(p, work), cap);
+        canAdd[p.id] = { n, boxOver: !!boxOver[k] };
+    });
+    return { work, canAdd, total, items };
+}
+
+function renderMorePlanner(brand) {
+    const box = document.getElementById(`more-planner-${brand}`);
+    if (!box) return;
+    const data = BRAND_DATA[brand];
+    if (data.capMode !== 'after' || !data.lastRemainStocks) { box.innerHTML = ''; return; }
+    // 正在輸入時只更新數字，不重畫（不然游標會跳掉）
+    if (box.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') { updateMorePlanner(brand); return; }
+    const plan = data.morePlan || {};
+    const items = moreActiveProducts(brand);
+    box.innerHTML = `<div style="border:1px solid var(--teal);border-radius:2px;padding:8px 10px;margin-bottom:10px;background:rgba(0,128,128,.05);">
+        <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--teal);margin-bottom:4px;">🔮 剩下的原料自己安排　已安排 <span id="mp-total-${brand}">0</span> 個</div>
+        <div style="display:flex;gap:6px;margin-bottom:6px;">
+            <button type="button" class="made-btn ghost" style="flex:1;" onclick="fillMorePlan('${brand}','big')">照大盒優先填</button>
+            <button type="button" class="made-btn ghost" style="flex:1;" onclick="fillMorePlan('${brand}','small')">照小盒優先填</button>
+            <button type="button" class="made-btn ghost" style="flex:1;" onclick="fillMorePlan('${brand}','clear')">清空</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 78px 70px;gap:3px 6px;align-items:center;font-family:var(--mono);font-size:11px;">
+            <div style="color:#888;font-size:10px;">商品</div><div style="color:#888;font-size:10px;text-align:right;">我要做</div><div style="color:#888;font-size:10px;text-align:right;">還能加</div>
+            ${items.map(p => `
+                <div>${p.isCustom ? '✏️ ' : ''}${p.name}</div>
+                <input type="number" min="0" step="1" class="qty-input made-input" style="width:100%;" value="${plan[p.id] || ''}" placeholder="0"
+                    oninput="setMorePlan('${brand}','${p.id}',this.value)">
+                <div style="text-align:right;" id="mp-add-${p.id}-${brand}">—</div>`).join('')}
+        </div>
+        <div class="cap-sub" style="margin-top:6px;" id="mp-left-${brand}"></div>
+    </div>`;
+    updateMorePlanner(brand);
+}
+
+function updateMorePlanner(brand) {
+    const data = BRAND_DATA[brand];
+    if (!data.lastRemainStocks) return;
+    const { work, canAdd, total } = calcMorePlan(brand);
+    const t = document.getElementById(`mp-total-${brand}`);
+    if (t) t.textContent = total;
+    Object.entries(canAdd).forEach(([id, v]) => {
+        const el = document.getElementById(`mp-add-${id}-${brand}`);
+        if (el) { el.innerHTML = v.boxOver ? '<span style="color:var(--warn);">盒子不夠</span>' : `<b>${v.n}</b>`; }
+    });
+    const unit = data.isWeightBased ? 'g' : '';
+    const f = v => Math.round(v * 10) / 10;
+    const neg = data.validIngredients.filter(i => (work[i] || 0) < -0.001);
+    const left = data.validIngredients.filter(i => (work[i] || 0) > 0.001);
+    const el = document.getElementById(`mp-left-${brand}`);
+    if (el) el.innerHTML =
+        (neg.length ? `<span style="color:var(--warn);font-weight:700;">⚠ 不夠：${neg.map(i => `${ingLbl(i, brand)} ${f(work[i])}${unit}`).join('、')}</span><br>` : '')
+        + `安排完原料還剩：${left.length ? left.map(i => `${ingLbl(i, brand)} ${f(work[i])}${unit}`).join('、') : '全部用完'}`;
+}
+
+function setMorePlan(brand, pid, val) {
+    const data = BRAND_DATA[brand];
+    if (!data.morePlan) data.morePlan = {};
+    const n = parseFloat(val) || 0;
+    if (n > 0) data.morePlan[pid] = n; else delete data.morePlan[pid];
+    updateMorePlanner(brand);
+    clearTimeout(setMorePlan._t);
+    setMorePlan._t = setTimeout(saveState, 600);
+}
+
+function fillMorePlan(brand, how) {
+    const data = BRAND_DATA[brand];
+    data.morePlan = {};
+    if (how !== 'clear') {
+        const items = moreActiveProducts(brand);
+        if (how === 'small') items.reverse();
+        // 一款一款做到滿（照順序）
+        items.forEach(p => {
+            const { canAdd } = calcMorePlan(brand);
+            const n = canAdd[p.id] ? canAdd[p.id].n : 0;
+            if (n > 0) data.morePlan[p.id] = n;
+        });
+    }
+    const box = document.getElementById(`more-planner-${brand}`);
+    if (box && box.contains(document.activeElement)) document.activeElement.blur();
+    renderMorePlanner(brand);
+    saveState();
+}
+
 // 用剩下的原料＋盒子，照「大盒優先」模擬還能再做多少（不會真的扣庫存）
 function simulateMore(brand, stocks, boxLeft) {
     const data = BRAND_DATA[brand];
@@ -3464,6 +3580,7 @@ function initCapacityCard(brand) {
                     <button type="button" id="cap-mode-after-${brand}" onclick="setCapacityMode('${brand}','after')">分配後剩餘</button>
                 </div>
                 <p class="hint-text" style="margin-bottom:6px;">// 各商品「單獨」用這些原料最多能做幾個（彼此不扣除）。瓶頸＝最先用完的原料。</p>
+                <div id="more-planner-${brand}"></div>
                 <div id="cap-list-${brand}"></div>
             </div>
         </div>`);
@@ -3559,16 +3676,9 @@ function renderCapacity(brand) {
             ${totalMiss.length ? `<div class="cap-sub" style="margin-top:6px;color:var(--warn);">全部補齊還要：${totalMiss.join('、')}</div>` : ''}
         </div>`;
     }
-    if (data.capMode === 'after') {
-        const m = simulateMore(brand, stocks, data.lastBoxLeft);
-        const sum = m.reduce((a, x) => a + x.n, 0);
-        more += `<div style="border:1px solid var(--teal);border-radius:2px;padding:8px 10px;margin-bottom:10px;background:rgba(0,128,128,.05);">
-            <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--teal);margin-bottom:4px;">🔮 剩下的原料照「大盒優先」還能再做 ${sum} 個</div>
-            ${m.length ? m.map(x => `<div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;"><span>${x.isCustom ? '✏️ ' : ''}${x.name}</span><b>${x.n}</b></div>`).join('') : '<div class="cap-sub">// 已經做不出任何一款了</div>'}
-            <div class="cap-sub" style="margin-top:4px;">// 下面是「單獨」做某一款最多能做幾個</div>
-        </div>`;
-    }
+    if (data.capMode === 'after') more += `<div class="cap-sub" style="margin:4px 0;">// 下面是「單獨」做某一款最多能做幾個</div>`;
     list.innerHTML = more + (rows.length ? rows.join('') : '<div class="plan-empty">// 尚無商品</div>');
+    renderMorePlanner(brand);
 }
 
 let capRefreshTimer = null;
@@ -4356,7 +4466,7 @@ function buildStateObject() {
             const fixedEl = document.getElementById(`fixed-${p.id}-${brand}`);
             presets[p.id] = { prio: prioEl?.value || 'skip', fixed: parseInt(fixedEl?.value) || 0, price: p.price || 0, box: p.boxSize || 1, req: p.req, reqOrder: p.reqOrder || null };
         });
-        const entry = { madeUsedIds: data.madeUsedIds || {}, madeDraftSrc: data.madeDraftSrc || [], allocMode: data.allocMode || 'prio', madeLog: data.madeLog || [], madeDraft: data.madeDraft || {}, stocks, presets, customProducts: data.customProducts, customIdCounter: data.customIdCounter, customHistory: data.customHistory, lastImportTime: data.lastImportTime || null, boxStocks: data.boxStocks || {} };
+        const entry = { morePlan: data.morePlan || {}, madeUsedIds: data.madeUsedIds || {}, madeDraftSrc: data.madeDraftSrc || [], allocMode: data.allocMode || 'prio', madeLog: data.madeLog || [], madeDraft: data.madeDraft || {}, stocks, presets, customProducts: data.customProducts, customIdCounter: data.customIdCounter, customHistory: data.customHistory, lastImportTime: data.lastImportTime || null, boxStocks: data.boxStocks || {} };
         if (brand === 'le') {
             entry.lemMix = {};
             data.products.filter(p => p.isMix).forEach(p => { entry.lemMix[p.id] = { ...p.req }; });
@@ -4535,6 +4645,7 @@ function applyStateObject(state) {
             data.madeDraft = normalizeNumMap(saved.madeDraft);
             data.allocMode = saved.allocMode || 'prio';
             data.madeUsedIds = normalizeNumMap(saved.madeUsedIds);
+            data.morePlan = normalizeNumMap(saved.morePlan);
             data.madeDraftSrc = fbToArray(saved.madeDraftSrc);
             syncAllocModeUI(brand);
             [...data.products, ...data.customProducts].forEach(p => {

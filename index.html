@@ -2731,7 +2731,13 @@ function initMadeBar(brand) {
     const calcBtn = document.querySelector(`#page-${brand} .calc-btn`);
     if (!calcBtn || document.getElementById(`made-bar-${brand}`)) return;
     calcBtn.insertAdjacentHTML('afterend', `
-        <div class="made-bar" id="made-bar-${brand}">
+        <div class="made-bar" id="made-bar-${brand}" style="flex-wrap:wrap;">
+            <input type="date" id="made-from-${brand}" class="custom-input" style="padding:4px;flex:1;min-width:120px;" value="${todayISO()}">
+            <span style="align-self:center;font-family:var(--mono);font-size:11px;">～</span>
+            <input type="date" id="made-to-${brand}" class="custom-input" style="padding:4px;flex:1;min-width:120px;" value="${todayISO()}">
+            <button type="button" class="made-btn ghost" style="flex-basis:100%;" onclick="fetchMadeFromProduction('${brand}')">📥 從生產表抓已做量（還沒扣過的）</button>
+        </div>
+        <div class="made-bar" style="margin-top:6px;">
             <button type="button" class="made-btn" onclick="deductMade('${brand}')">📦 依「已做量」扣除庫存</button>
             <button type="button" class="made-btn ghost" onclick="undoLastMade('${brand}')">↶ 復原上一次</button>
         </div>
@@ -2740,6 +2746,81 @@ function initMadeBar(brand) {
         </label>
         <div class="made-status" id="made-status-${brand}"></div>
         <div class="made-log" id="made-log-${brand}"></div>`);
+}
+
+function todayISO() {
+    const d = new Date(), pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+const fbSafeKey = k => String(k).replace(/[.#$\[\]\/]/g, '_');
+const normCode = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '').replace(/g$/, '');
+
+// 生產表（/vtProduction/entries）的品番 → 這個品牌的商品
+// 預設商品：品番去掉空白符號後比對 id 或名稱（LF8→lf8、C8→c8、LEGr-25g→legr25、YT8→上＋下）
+// 自訂商品：品番裡有包含自訂商品名稱就算（大丸松坂屋(8入)橘 → 大丸松坂屋），多個符合取名稱最長的
+function matchProductionEntry(brand, e) {
+    const data = BRAND_DATA[brand];
+    const code = e.product || '';
+    const eb = String(e.brand || '').toLowerCase();
+    if (eb === brand) {
+        const k = normCode(code);
+        const hit = data.products.filter(p => {
+            const nm = normCode(p.name), nmNoBrand = normCode(String(p.name).replace(/^(DES|LF|YT|LE)\s+/i, ''));
+            return k && (normCode(p.id) === k || nm === k || nmNoBrand === k);
+        });
+        if (hit.length) return hit;
+        const split = data.products.filter(p => /[上下]$/.test(p.name) && normCode(p.name.replace(/[上下]$/, '')) === k);
+        if (split.length) return split;
+    }
+    const plain = s => String(s || '').replace(/\s/g, '');
+    const cands = data.customProducts.filter(p => plain(p.name).length >= 2 && plain(code).includes(plain(p.name)))
+        .sort((a, b) => plain(b.name).length - plain(a.name).length);
+    return cands.length ? [cands[0]] : [];
+}
+
+async function fetchMadeFromProduction(brand) {
+    const data = BRAND_DATA[brand];
+    const from = document.getElementById(`made-from-${brand}`).value || todayISO();
+    const to = document.getElementById(`made-to-${brand}`).value || from;
+    if (typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length) { madeStatus(brand, '⚠ 沒連上雲端，抓不到生產表', false); return; }
+    madeStatus(brand, '讀取生產表中…', true);
+    let entries;
+    try {
+        const snap = await firebase.database().ref('vtProduction/entries').once('value');
+        entries = fbToArray(snap.val());
+    } catch (err) { madeStatus(brand, '⚠ 讀取失敗：' + err.message, false); return; }
+
+    const used = data.madeUsedIds || {};
+    const draft = {}, src = [], unmatched = {};
+    let skipped = 0;
+    entries.forEach(e => {
+        if (!e || !e.date || e.date < from || e.date > to) return;
+        const qty = parseFloat(e.actual) || 0;
+        if (qty <= 0) return;
+        const hit = matchProductionEntry(brand, e);
+        if (!hit.length) {
+            if (String(e.brand || '').toLowerCase() === brand) unmatched[e.product] = (unmatched[e.product] || 0) + qty;
+            return;
+        }
+        if (used[fbSafeKey(e.id)]) { skipped++; return; }
+        hit.forEach(p => { draft[p.id] = (draft[p.id] || 0) + qty; });
+        src.push(fbSafeKey(e.id));
+    });
+
+    data.madeDraft = draft;
+    data.madeDraftSrc = src;
+    [...data.products, ...data.customProducts].forEach(p => {
+        const el = document.getElementById(`made-${p.id}-${brand}`);
+        if (el) el.value = draft[p.id] || '';
+    });
+    saveState();
+    const names = Object.fromEntries([...data.products, ...data.customProducts].map(p => [p.id, p.name]));
+    const got = Object.entries(draft).map(([id, n]) => `${names[id]}×${n}`);
+    const um = Object.entries(unmatched).map(([c, n]) => `${c}×${n}`);
+    madeStatus(brand,
+        (got.length ? `📥 ${from}～${to} 抓到 ${src.length} 筆：${got.join('、')}<br>確認沒問題再按「📦 扣除」` : `// ${from}～${to} 沒有還沒扣過的生產紀錄`)
+        + (skipped ? `<br>// 已扣過的 ${skipped} 筆自動略過` : '')
+        + (um.length ? `<br><span style="color:var(--warn);">⚠ 對不到商品（沒抓）：${um.join('、')}</span>` : ''), got.length > 0);
 }
 
 function madeStatus(brand, html, ok) {
@@ -2798,7 +2879,11 @@ function deductMade(brand) {
     data.madeLog.unshift({
         time: `${now.getMonth()+1}/${now.getDate()} ${pad(now.getHours())}:${pad(now.getMinutes())}`,
         items, ingDelta, boxDelta: doBox ? boxDelta : {},
+        srcIds: data.madeDraftSrc || [],
     });
+    data.madeUsedIds = data.madeUsedIds || {};
+    (data.madeDraftSrc || []).forEach(id => { data.madeUsedIds[id] = 1; });
+    data.madeDraftSrc = [];
     if (data.madeLog.length > 50) data.madeLog.length = 50;
 
     // 清掉已做量輸入、刷新所有用到庫存的地方（自訂商品原料顏色、盒子、可做量）
@@ -2827,6 +2912,7 @@ function undoLastMade(brand) {
         if (el) el.value = Math.round(((parseFloat(el.value) || 0) + amt) * 1000) / 1000;
     });
     Object.entries(log.boxDelta || {}).forEach(([k, n]) => { data.boxStocks[k] = (data.boxStocks[k] || 0) + n; });
+    (log.srcIds || []).forEach(id => { if (data.madeUsedIds) delete data.madeUsedIds[id]; });
     data.madeLog.shift();
     data.lastRemainStocks = null;
     renderBoxStockGrid(brand);
@@ -4221,7 +4307,7 @@ function buildStateObject() {
             const fixedEl = document.getElementById(`fixed-${p.id}-${brand}`);
             presets[p.id] = { prio: prioEl?.value || 'skip', fixed: parseInt(fixedEl?.value) || 0, price: p.price || 0, box: p.boxSize || 1, req: p.req, reqOrder: p.reqOrder || null };
         });
-        const entry = { allocMode: data.allocMode || 'prio', madeLog: data.madeLog || [], madeDraft: data.madeDraft || {}, stocks, presets, customProducts: data.customProducts, customIdCounter: data.customIdCounter, customHistory: data.customHistory, lastImportTime: data.lastImportTime || null, boxStocks: data.boxStocks || {} };
+        const entry = { madeUsedIds: data.madeUsedIds || {}, madeDraftSrc: data.madeDraftSrc || [], allocMode: data.allocMode || 'prio', madeLog: data.madeLog || [], madeDraft: data.madeDraft || {}, stocks, presets, customProducts: data.customProducts, customIdCounter: data.customIdCounter, customHistory: data.customHistory, lastImportTime: data.lastImportTime || null, boxStocks: data.boxStocks || {} };
         if (brand === 'le') {
             entry.lemMix = {};
             data.products.filter(p => p.isMix).forEach(p => { entry.lemMix[p.id] = { ...p.req }; });
@@ -4394,10 +4480,13 @@ function applyStateObject(state) {
                 items: fbToArray(l.items),
                 ingDelta: normalizeNumMap(l.ingDelta),
                 boxDelta: normalizeNumMap(l.boxDelta),
+                srcIds: fbToArray(l.srcIds),
             }));
             renderMadeLog(brand);
             data.madeDraft = normalizeNumMap(saved.madeDraft);
             data.allocMode = saved.allocMode || 'prio';
+            data.madeUsedIds = normalizeNumMap(saved.madeUsedIds);
+            data.madeDraftSrc = fbToArray(saved.madeDraftSrc);
             syncAllocModeUI(brand);
             [...data.products, ...data.customProducts].forEach(p => {
                 const el = document.getElementById(`made-${p.id}-${brand}`);

@@ -143,11 +143,22 @@
         /* Product Table */
         .hint-text { font-size: 11px; color: #888; margin-bottom: 10px; font-family: var(--mono); line-height: 1.6; }
         .prod-table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
-        .prod-table th:nth-child(1), .prod-table td:nth-child(1) { width: 38%; }
-        .prod-table th:nth-child(2), .prod-table td:nth-child(2) { width: 17%; }
-        .prod-table th:nth-child(3), .prod-table td:nth-child(3) { width: 17%; }
+        .prod-table th:nth-child(1), .prod-table td:nth-child(1) { width: 32%; }
+        .prod-table th:nth-child(2), .prod-table td:nth-child(2) { width: 15%; }
+        .prod-table th:nth-child(3), .prod-table td:nth-child(3) { width: 13%; }
         .prod-table th:nth-child(4), .prod-table td:nth-child(4) { width: 13%; }
-        .prod-table th:nth-child(5), .prod-table td:nth-child(5) { width: 15%; }
+        .prod-table th:nth-child(5), .prod-table td:nth-child(5) { width: 14%; }
+        .prod-table th:nth-child(6), .prod-table td:nth-child(6) { width: 13%; }
+        .made-input { border-color: var(--teal) !important; background: #f0faf6 !important; }
+        .made-bar { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+        .made-btn { flex:1; min-width:160px; padding:11px; background:var(--teal); color:#fff; border:none; border-radius:2px; font-family:var(--mono); font-size:12px; font-weight:700; cursor:pointer; letter-spacing:.5px; }
+        .made-btn:hover { opacity:.88; }
+        .made-btn.ghost { flex:0 0 auto; min-width:auto; background:transparent; color:#666; border:1px solid var(--border); font-weight:400; }
+        .made-btn.ghost:hover { border-color:var(--accent); color:var(--accent); opacity:1; }
+        .made-status { font-family:var(--mono); font-size:10px; margin-top:8px; line-height:1.6; }
+        .made-log { margin-top:8px; border-top:1px dashed var(--border); padding-top:6px; }
+        .made-log-item { font-family:var(--mono); font-size:10px; color:#666; padding:3px 0; border-bottom:1px dotted var(--border); line-height:1.5; }
+        .made-log-item b { color:var(--ink); }
         .prod-table thead tr { background: var(--cream); border-bottom: 2px solid var(--ink); }
         .prod-table th { padding: 7px 8px; text-align: left; font-family: var(--mono); font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: #666; font-weight: 400; }
         .prod-table tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
@@ -274,7 +285,7 @@
         .custom-item-visual-stacked { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
         .custom-item-index { display: grid; gap: 2px; font-family: var(--mono); font-size: 8px; color: #999; }
         .custom-item-index span { width: var(--cell-size, 18px); height: var(--cell-size, 18px); display: flex; align-items: center; justify-content: center; }
-        .custom-item-footer { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--cream); border-top: 1px solid var(--border); }
+        .custom-item-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 10px; background: var(--cream); border-top: 1px solid var(--border); }
         .custom-item-footer-label { font-family: var(--mono); font-size: 9px; color: #888; }
         .custom-item-prio select { padding: 3px 4px; font-family: var(--mono); font-size: 10px; border: 1px solid var(--border); border-radius: 2px; background: #fff; outline: none; }
         .custom-item-fixed { display: flex; align-items: center; gap: 4px; margin-left: auto; }
@@ -515,6 +526,7 @@
                                 <th>裝箱數量</th>
                                 <th>指定量</th>
                                 <th>優先度</th>
+                                <th>已做量</th>
                             </tr>
                         </thead>
                         <tbody id="prod-list-body-lf"></tbody>
@@ -565,6 +577,7 @@
                                     <option value="13">第 13</option>
                                     <option value="14">第 14</option>
                                     <option value="15">第 15</option>
+                                    <option value="skip">🚫 不生産</option>
                                 </select>
                             </div>
                         </div>
@@ -707,6 +720,7 @@
                                 <th>裝箱數量</th>
                                 <th>指定量</th>
                                 <th>優先度</th>
+                                <th>已做量</th>
                             </tr>
                         </thead>
                         <tbody id="prod-list-body-des"></tbody>
@@ -757,6 +771,7 @@
                                     <option value="13">第 13</option>
                                     <option value="14">第 14</option>
                                     <option value="15">第 15</option>
+                                    <option value="skip">🚫 不生産</option>
                                 </select>
                             </div>
                         </div>
@@ -899,6 +914,7 @@
                                 <th>裝箱數量</th>
                                 <th>指定量</th>
                                 <th>優先度</th>
+                                <th>已做量</th>
                             </tr>
                         </thead>
                         <tbody id="prod-list-body-yt"></tbody>
@@ -949,6 +965,7 @@
                                     <option value="13">第 13</option>
                                     <option value="14">第 14</option>
                                     <option value="15">第 15</option>
+                                    <option value="skip">🚫 不生産</option>
                                 </select>
                             </div>
                         </div>
@@ -1091,6 +1108,7 @@
                                 <th>裝箱數量</th>
                                 <th>指定量</th>
                                 <th>優先度</th>
+                                <th>已做量</th>
                             </tr>
                         </thead>
                         <tbody id="prod-list-body-le"></tbody>
@@ -1141,6 +1159,7 @@
                                     <option value="13">第 13</option>
                                     <option value="14">第 14</option>
                                     <option value="15">第 15</option>
+                                    <option value="skip">🚫 不生産</option>
                                 </select>
                             </div>
                         </div>
@@ -1956,7 +1975,7 @@ function initTable(brand) {
     const tbody = document.getElementById(`prod-list-body-${brand}`);
     const products = BRAND_DATA[brand].products;
     if (products.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#aaa;font-family:var(--mono);font-size:11px;padding:14px 0;">// 尚無預設商品，請在「自訂商品」分頁新增</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#aaa;font-family:var(--mono);font-size:11px;padding:14px 0;">// 尚無預設商品，請在「自訂商品」分頁新增</td></tr>`;
         return;
     }
     tbody.innerHTML = products.map(p => {
@@ -1978,6 +1997,8 @@ function initTable(brand) {
             </td>
             <td data-label="指定量"><input type="number" id="fixed-${p.id}-${brand}" class="qty-input" placeholder="自動" min="0"></td>
             <td data-label="優先度"><select id="prio-${p.id}-${brand}" class="prio-select skip-mode" onchange="updateSelectStyle('${p.id}', '${brand}')">${opts}</select></td>
+            <td data-label="已做量"><input type="number" id="made-${p.id}-${brand}" class="qty-input made-input" placeholder="0" min="0" step="1"
+                value="${(BRAND_DATA[brand].madeDraft||{})[p.id] || ''}" oninput="setMadeDraft('${p.id}', '${brand}', this.value)"></td>
         </tr>`;
     }).join('');
 }
@@ -2076,15 +2097,17 @@ function addCustomProduct(brand) {
     const price = parseInt(document.getElementById(`custom-price-${brand}`).value) || 0;
     const boxSize = parseInt(document.getElementById(`custom-box-${brand}`).value) || 1;
     const fixedQty = parseInt(document.getElementById(`custom-fixed-${brand}`).value) || 0;
-    const prio = parseInt(document.getElementById(`custom-prio-${brand}`).value) || 1;
+    const prioRaw = document.getElementById(`custom-prio-${brand}`).value;
+    const prio = prioRaw === 'skip' ? 'skip' : (parseInt(prioRaw) || 1);
     const boxTypeSel = document.getElementById(`custom-boxtype-${brand}`);
     const boxTypeId = boxTypeSel && boxTypeSel.value ? boxTypeSel.value : null;
-    const cid = `custom-${++data.customIdCounter}`;
+    const boxTypeManual = true;
+    const cid = `custom-${++data.customIdCounter}-${DEVICE_ID}`;  // 加裝置 ID，避免兩台同時新增撞號
 
        // 依拖曳排好的順序（一顆一筆）展開成 reqOrder，讓圖片拼貼順序跟組合預覽一致
     const reqOrder = data.comboOrder.map(slot => slot.ing);
 
-    data.customProducts.push({ id: cid, name, price, boxSize, req, reqOrder, fixedQty, currentPriority: prio, isCustom: true, boxTypeId });
+    data.customProducts.push({ id: cid, name, price, boxSize, req, reqOrder, fixedQty, currentPriority: prio, isCustom: true, boxTypeId, boxTypeManual });
     renderCustomList(brand);
     renderBoxStockGrid(brand);
 
@@ -2228,6 +2251,27 @@ function removeCustom(cid, brand) {
 
 // ── 盒子庫存（新增功能）：盒型依現有商品品項自動列出，計算生產後用了多少箱、剩多少箱 ──
 // 用「現有預設商品」清單填入自訂商品的「使用盒型」下拉選單
+function reqTotal(req) {
+    return Object.values(req || {}).reduce((a, b) => a + (parseFloat(b) || 0), 0);
+}
+// 自訂商品顆數（重量）跟哪個預設商品一樣，就用那個商品的盒子；同顆數有多款時取清單第一個
+function guessBoxTypeId(brand, req) {
+    const total = reqTotal(req);
+    if (!total) return null;
+    const hit = BRAND_DATA[brand].products.find(bp => Math.abs((bp.targetWeight || reqTotal(bp.req)) - total) < 0.01);
+    return hit ? hit.id : null;
+}
+// 舊資料：沒手動選過盒型的自訂商品，自動補上
+function autoAssignCustomBoxTypes(brand) {
+    let changed = false;
+    BRAND_DATA[brand].customProducts.forEach(p => {
+        if (p.boxTypeManual || p.boxTypeId) return;
+        const g = guessBoxTypeId(brand, p.req);
+        if (g) { p.boxTypeId = g; changed = true; }
+    });
+    return changed;
+}
+
 function renderBoxTypeSelector(brand) {
     const sel = document.getElementById(`custom-boxtype-${brand}`);
     if (!sel) return;
@@ -2629,7 +2673,7 @@ function renderHistoryModal() {
                 <span class="history-item-time">${h.date} ${h.time}</span>
             </div>
             <div class="history-item-recipe">${recipeStr}</div>
-            <div class="history-item-meta">裝箱數量:${h.boxSize} 售價:${h.price>0?'¥'+h.price:'—'} ${costStr} ${fixedStr} 優先度:第${h.priority}</div>
+            <div class="history-item-meta">裝箱數量:${h.boxSize} 售價:${h.price>0?'¥'+h.price:'—'} ${costStr} ${fixedStr} 優先度:${h.priority==='skip'?'不生産':'第'+h.priority}</div>
         </div>`;
     }).join('');
 
@@ -2672,6 +2716,137 @@ function clearHistoryWithConfirm(btn) {
 // 計算「同一個盒型」被哪些商品（含預設+自訂）以指定量方式一起使用，加總起來的預估用箱量
 // 預設商品的指定量是即時讀 DOM（因為預設商品本身沒有固定存 fixedQty 屬性），自訂商品則讀物件上的 fixedQty
 // 注意：指定量本身就直接對應「盒子數量」，不需要再除以裝箱數量
+// ── 已做量扣庫存（新增功能）──
+// 每個商品（預設＋自訂）輸入「已做量」→ 按扣除 → 自動依配方從原料庫存減掉，也會扣盒子庫存
+function setMadeDraft(pid, brand, val) {
+    const data = BRAND_DATA[brand];
+    if (!data.madeDraft) data.madeDraft = {};
+    const n = parseInt(val) || 0;
+    if (n > 0) data.madeDraft[pid] = n; else delete data.madeDraft[pid];
+    clearTimeout(setMadeDraft._t);
+    setMadeDraft._t = setTimeout(saveState, 600); // 打完字 0.6 秒後同步
+}
+
+function initMadeBar(brand) {
+    const calcBtn = document.querySelector(`#page-${brand} .calc-btn`);
+    if (!calcBtn || document.getElementById(`made-bar-${brand}`)) return;
+    calcBtn.insertAdjacentHTML('afterend', `
+        <div class="made-bar" id="made-bar-${brand}">
+            <button type="button" class="made-btn" onclick="deductMade('${brand}')">📦 依「已做量」扣除庫存</button>
+            <button type="button" class="made-btn ghost" onclick="undoLastMade('${brand}')">↶ 復原上一次</button>
+        </div>
+        <label style="display:flex;align-items:center;gap:5px;margin-top:6px;font-family:var(--mono);font-size:10px;color:#666;cursor:pointer;">
+            <input type="checkbox" id="made-box-${brand}" checked style="accent-color:var(--teal);"> 同時扣除盒子庫存
+        </label>
+        <div class="made-status" id="made-status-${brand}"></div>
+        <div class="made-log" id="made-log-${brand}"></div>`);
+}
+
+function madeStatus(brand, html, ok) {
+    const el = document.getElementById(`made-status-${brand}`);
+    if (!el) return;
+    el.style.color = ok ? 'var(--ok)' : 'var(--warn)';
+    el.innerHTML = html;
+}
+
+function deductMade(brand) {
+    const data = BRAND_DATA[brand];
+    const draft = data.madeDraft || {};
+    const all = [...data.products, ...data.customProducts];
+    const targets = all.filter(p => draft[p.id] > 0);
+    if (targets.length === 0) { madeStatus(brand, '⚠ 請先在商品的「已做量」輸入數量', false); return; }
+
+    const stocks = getStocks(brand);
+    const work = { ...stocks };
+    const ingDelta = {}, boxDelta = {}, items = [], notes = [];
+
+    targets.forEach(p => {
+        const qty = draft[p.id];
+        let perUnit = p.req;
+        if (brand === 'le' && p.isMix) {
+            // LEM 混合：依目前剩料、02b 範圍算每包克數
+            const r = solveMix(p, work, qty);
+            if (!r.perUnit) { notes.push(`${p.name} 克數範圍湊不到目標，未扣`); return; }
+            perUnit = r.perUnit;
+        }
+        Object.entries(perUnit).forEach(([ing, q]) => {
+            const amt = Math.round(q * qty * 1000) / 1000;
+            ingDelta[ing] = Math.round(((ingDelta[ing] || 0) + amt) * 1000) / 1000;
+            work[ing] = Math.round(((work[ing] || 0) - amt) * 1000) / 1000;
+        });
+        const boxKey = p.boxTypeId || p.id;
+        if (data.boxStocks[boxKey] != null) boxDelta[boxKey] = (boxDelta[boxKey] || 0) + qty;
+        items.push({ name: p.name, qty });
+    });
+    if (items.length === 0) { madeStatus(brand, '⚠ ' + notes.join('；'), false); return; }
+
+    const short = Object.keys(ingDelta).filter(i => work[i] < 0);
+    if (short.length) {
+        const msg = short.map(i => `${ingFull(i, brand)}：庫存 ${stocks[i]}，要扣 ${ingDelta[i]}`).join('\n');
+        if (!confirm(`以下原料庫存不夠，扣完會變負數：\n${msg}\n\n確定還是要扣嗎？`)) return;
+    }
+
+    const doBox = document.getElementById(`made-box-${brand}`)?.checked;
+    Object.entries(ingDelta).forEach(([ing, amt]) => {
+        const el = document.getElementById(`stock-${ing}-${brand}`);
+        if (el) el.value = Math.round(((parseFloat(el.value) || 0) - amt) * 1000) / 1000;
+    });
+    if (doBox) Object.entries(boxDelta).forEach(([k, n]) => { data.boxStocks[k] = (data.boxStocks[k] || 0) - n; });
+
+    const now = new Date(), pad = n => String(n).padStart(2, '0');
+    data.madeLog = data.madeLog || [];
+    data.madeLog.unshift({
+        time: `${now.getMonth()+1}/${now.getDate()} ${pad(now.getHours())}:${pad(now.getMinutes())}`,
+        items, ingDelta, boxDelta: doBox ? boxDelta : {},
+    });
+    if (data.madeLog.length > 50) data.madeLog.length = 50;
+
+    // 清掉已做量輸入、刷新所有用到庫存的地方（自訂商品原料顏色、盒子、可做量）
+    data.madeDraft = {};
+    all.forEach(p => { const el = document.getElementById(`made-${p.id}-${brand}`); if (el) el.value = ''; });
+    data.lastRemainStocks = null;
+    renderBoxStockGrid(brand);
+    renderCustomList(brand);
+    autoColorIngGrid(brand);
+    renderCapacity(brand);
+    renderMadeLog(brand);
+    saveState();
+
+    const unit = data.isWeightBased ? 'g' : '';
+    madeStatus(brand, `✓ 已扣除：${items.map(x => `${x.name}×${x.qty}`).join('、')}<br>原料：${Object.entries(ingDelta).map(([i, a]) => `${ingLbl(i, brand)} -${a}${unit}`).join('　')}`
+        + (notes.length ? `<br><span style="color:var(--warn);">⚠ ${notes.join('；')}</span>` : ''), true);
+}
+
+function undoLastMade(brand) {
+    const data = BRAND_DATA[brand];
+    const log = (data.madeLog || [])[0];
+    if (!log) { madeStatus(brand, '⚠ 沒有可以復原的紀錄', false); return; }
+    if (!confirm(`復原 ${log.time} 的扣除？\n${log.items.map(x => `${x.name}×${x.qty}`).join('、')}`)) return;
+    Object.entries(log.ingDelta || {}).forEach(([ing, amt]) => {
+        const el = document.getElementById(`stock-${ing}-${brand}`);
+        if (el) el.value = Math.round(((parseFloat(el.value) || 0) + amt) * 1000) / 1000;
+    });
+    Object.entries(log.boxDelta || {}).forEach(([k, n]) => { data.boxStocks[k] = (data.boxStocks[k] || 0) + n; });
+    data.madeLog.shift();
+    data.lastRemainStocks = null;
+    renderBoxStockGrid(brand);
+    renderCustomList(brand);
+    autoColorIngGrid(brand);
+    renderCapacity(brand);
+    renderMadeLog(brand);
+    saveState();
+    madeStatus(brand, `↶ 已復原 ${log.time} 的扣除`, true);
+}
+
+function renderMadeLog(brand) {
+    const el = document.getElementById(`made-log-${brand}`);
+    if (!el) return;
+    const log = BRAND_DATA[brand].madeLog || [];
+    el.innerHTML = log.length === 0 ? '' :
+        `<div class="section-label" style="margin-top:4px;">// 扣除紀錄（最近 ${Math.min(log.length, 5)} 筆）</div>` +
+        log.slice(0, 5).map(l => `<div class="made-log-item"><b>${l.time}</b>　${l.items.map(x => `${x.name}×${x.qty}`).join('、')}</div>`).join('');
+}
+
 function getBoxTypeFixedUsage(brand, effectiveBoxId) {
     const data = BRAND_DATA[brand];
     let totalBoxes = 0;
@@ -2689,7 +2864,7 @@ function getBoxTypeFixedUsage(brand, effectiveBoxId) {
     });
     data.customProducts.forEach(pr => {
         const eid = pr.boxTypeId || pr.id;
-        if (eid !== effectiveBoxId) return;
+        if (eid !== effectiveBoxId || pr.currentPriority === 'skip') return;
         if (pr.fixedQty > 0) {
             totalBoxes += pr.fixedQty;
             contributors.push({ name: pr.name, boxes: pr.fixedQty });
@@ -2723,7 +2898,9 @@ function renderCustomList(brand) {
             ? ` 毛利:¥${(p.price - costTotal).toLocaleString()}`
             : '';
 
+        const isSkip = p.currentPriority === 'skip';
         let opts = Array.from({length:15},(_,i)=>`<option value="${i+1}" ${p.currentPriority===i+1?'selected':''}>第 ${i+1}</option>`).join('');
+        opts += `<option value="skip" ${isSkip?'selected':''}>🚫 不生産</option>`;
         const fixedDisplay = p.fixedQty > 0 ? p.fixedQty : '';
         const indexListHtml = order.map(ing => `<span>${ing}</span>`).join('');
         const indexGridHtml = `<div class="custom-item-index" style="grid-template-columns:repeat(${cols},var(--cell-size,18px));">${indexListHtml}</div>`;
@@ -2754,7 +2931,7 @@ function renderCustomList(brand) {
             ? `<span style="font-family:var(--mono);font-size:9px;color:var(--gold);">📦 共用「${boxTypeTargetName}」的盒子庫存（${boxStockDisplay}）</span>`
             : `<span style="font-family:var(--mono);font-size:9px;color:#999;">📦 獨立盒型（${boxStockDisplay}）</span>`;
 
-        return `<div class="custom-item">
+        return `<div class="custom-item" style="${isSkip ? 'opacity:.5;' : ''}">
             <div class="custom-item-main">
                 <div style="flex:1;">
                     <div class="custom-item-name">✏️ ${p.name}
@@ -2783,6 +2960,11 @@ function renderCustomList(brand) {
                     <select style="padding:3px 4px;font-family:var(--mono);font-size:10px;border:1px solid var(--border);border-radius:2px;background:#fff;outline:none;"
                         onchange="updateCustomBoxType('${p.id}', this.value, '${brand}')">${boxTypeOpts}</select>
                 </div>
+                <div class="custom-item-fixed">
+                    <span class="custom-item-fixed-label" style="color:var(--teal);font-weight:700;">已做量</span>
+                    <input type="number" class="made-input" placeholder="0" min="0" step="1" id="made-${p.id}-${brand}"
+                        value="${(data.madeDraft||{})[p.id] || ''}" oninput="setMadeDraft('${p.id}', '${brand}', this.value)">
+                </div>
             </div>
         </div>`;
     }).join('');
@@ -2792,6 +2974,7 @@ function updateCustomBoxType(cid, val, brand) {
     const p = BRAND_DATA[brand].customProducts.find(x => x.id === cid);
     if (!p) return;
     p.boxTypeId = val || null;
+    p.boxTypeManual = true;
     renderCustomList(brand);
     renderBoxStockGrid(brand);
     saveState();
@@ -2799,7 +2982,9 @@ function updateCustomBoxType(cid, val, brand) {
 
 function updateCustomPrio(cid, val, brand) {
     const p = BRAND_DATA[brand].customProducts.find(x => x.id === cid);
-    if (p) p.currentPriority = parseInt(val);
+    if (p) p.currentPriority = val === 'skip' ? 'skip' : parseInt(val);
+    renderCustomList(brand);
+    saveState();
 }
 
 function updateCustomFixed(cid, val, brand) {
@@ -3065,6 +3250,67 @@ function lcUpdate() {
 }
 
 // ── 目前庫存可做量（新增功能）：每個商品「單獨」用目前庫存最多能做幾個，彼此不互相扣除 ──
+function pieceCount(p) {
+    return p.targetWeight || Object.values(p.req || {}).reduce((a, b) => a + (parseFloat(b) || 0), 0);
+}
+
+const ALLOC_MODES = [
+    ['prio',   '依優先度', '照優先度排，同優先度依清單順序'],
+    ['big',    '大盒優先', '顆數多的先做到滿，再做小盒'],
+    ['small',  '小盒優先', '顆數少的先做到滿，再做大盒'],
+    ['even',   '平均分配', '同優先度輪流一次一箱，大家平均'],
+    ['manual', '手動（只做指定量）', '只做你填的指定量，剩下的看 04「分配後剩餘」還能做多少'],
+];
+function initAllocMode(brand) {
+    const btn = document.querySelector(`#page-${brand} .calc-btn`);
+    if (!btn || document.getElementById(`alloc-mode-${brand}`)) return;
+    btn.insertAdjacentHTML('beforebegin', `
+        <div style="display:flex;align-items:center;gap:8px;margin:10px 0 6px;flex-wrap:wrap;">
+            <span style="font-family:var(--mono);font-size:11px;font-weight:700;">分配方式</span>
+            <select id="alloc-mode-${brand}" class="custom-input" style="padding:5px;flex:1;min-width:160px;" onchange="setAllocMode('${brand}', this.value)">
+                ${ALLOC_MODES.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}
+            </select>
+        </div>
+        <p class="hint-text" id="alloc-hint-${brand}" style="margin:0 0 8px;"></p>`);
+    syncAllocModeUI(brand);
+}
+function syncAllocModeUI(brand) {
+    const mode = BRAND_DATA[brand].allocMode || 'prio';
+    const sel = document.getElementById(`alloc-mode-${brand}`);
+    if (sel) sel.value = mode;
+    const hint = document.getElementById(`alloc-hint-${brand}`);
+    const m = ALLOC_MODES.find(x => x[0] === mode);
+    if (hint && m) hint.textContent = `// ${m[2]}（有填指定量的一律先做）`;
+}
+function setAllocMode(brand, mode) {
+    BRAND_DATA[brand].allocMode = mode;
+    syncAllocModeUI(brand);
+    saveState();
+}
+
+// 用剩下的原料＋盒子，照「大盒優先」模擬還能再做多少（不會真的扣庫存）
+function simulateMore(brand, stocks, boxLeft) {
+    const data = BRAND_DATA[brand];
+    const st = { ...stocks }, bl = { ...(boxLeft || {}) };
+    const items = [
+        ...data.products.filter(p => { const s = document.getElementById(`prio-${p.id}-${brand}`); return !s || s.value !== 'skip'; }),
+        ...data.customProducts.filter(p => p.currentPriority !== 'skip'),
+    ].map(p => ({ ...p })).sort((a, b) => pieceCount(b) - pieceCount(a));
+    const out = [];
+    items.forEach(p => {
+        const k = p.boxTypeId || p.id;
+        const cap = bl[k] != null ? bl[k] : Infinity;
+        let n;
+        if (data.isWeightBased && p.isMix) {
+            const r = solveMix(p, st, Infinity);
+            n = Math.min(r.n || 0, cap);
+            if (n > 0) p.req = r.perUnit;
+        } else n = Math.min(maxProducible(p, st), cap);
+        if (n > 0) { deductStock(p, n, st); if (bl[k] != null) bl[k] -= n; out.push({ name: p.name, n, isCustom: p.isCustom }); }
+    });
+    return out;
+}
+
 function initCapacityCard(brand) {
     const panel = document.querySelector(`#page-${brand} .sticky-panel`);
     if (!panel || document.getElementById(`cap-list-${brand}`)) return;
@@ -3144,7 +3390,50 @@ function renderCapacity(brand) {
             <span class="cap-num">${n}</span><span class="cap-unit">個</span>
         </div>`;
     });
-    list.innerHTML = rows.length ? rows.join('') : '<div class="plan-empty">// 尚無商品</div>';
+    let more = '';
+    if (data.capMode === 'after' && (data.lastTargets || []).length) {
+        const fmt2 = v => Math.ceil(v * 10) / 10;
+        const need = {}, boxNeed = {};
+        const lines = data.lastTargets.map(t => {
+            const diff = t.target - t.got;
+            if (diff <= 0) return `<div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;"><span>✅ ${t.isCustom ? '✏️ ' : ''}${t.name}</span><span>${t.got} / ${t.target}</span></div>`;
+            // 單獨補齊這一款，各原料還缺多少（用分配後剩下的庫存算）
+            const miss = [];
+            Object.entries(t.req).forEach(([ing, q]) => {
+                if (!(q > 0)) return;
+                need[ing] = (need[ing] || 0) + q * diff;
+                const lack = q * diff - (stocks[ing] || 0);
+                if (lack > 0) miss.push(`${ingLbl(ing, brand)} ×${fmt2(lack)}${unit}`);
+            });
+            const bl = (data.lastBoxLeft || {})[t.boxKey];
+            if (bl != null) {
+                boxNeed[t.boxKey] = (boxNeed[t.boxKey] || 0) + diff;
+                if (diff > bl) miss.push(`盒子 ×${diff - bl}`);
+            }
+            return `<div style="font-family:var(--mono);font-size:11px;margin-top:3px;">
+                <div style="display:flex;justify-content:space-between;color:var(--warn);"><span>⚠ ${t.isCustom ? '✏️ ' : ''}${t.name}</span><span>${t.got} / ${t.target}（差 ${diff}）</span></div>
+                <div class="cap-sub">缺：${miss.length ? miss.join('、') : '原料被其他商品用掉了（調優先度）'}</div>
+            </div>`;
+        });
+        const totalMiss = Object.entries(need).map(([ing, q]) => [ing, q - (stocks[ing] || 0)]).filter(([, l]) => l > 0)
+            .map(([ing, l]) => `${ingLbl(ing, brand)} ×${fmt2(l)}${unit}`);
+        const shortCnt = data.lastTargets.filter(t => t.got < t.target).length;
+        more += `<div style="border:1px solid ${shortCnt ? 'var(--warn)' : 'var(--teal)'};border-radius:2px;padding:8px 10px;margin-bottom:10px;">
+            <div style="font-family:var(--mono);font-size:11px;font-weight:700;margin-bottom:4px;">📋 指定量達成：${data.lastTargets.length - shortCnt} 款 OK・${shortCnt} 款不足</div>
+            ${lines.join('')}
+            ${totalMiss.length ? `<div class="cap-sub" style="margin-top:6px;color:var(--warn);">全部補齊還要：${totalMiss.join('、')}</div>` : ''}
+        </div>`;
+    }
+    if (data.capMode === 'after') {
+        const m = simulateMore(brand, stocks, data.lastBoxLeft);
+        const sum = m.reduce((a, x) => a + x.n, 0);
+        more += `<div style="border:1px solid var(--teal);border-radius:2px;padding:8px 10px;margin-bottom:10px;background:rgba(0,128,128,.05);">
+            <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--teal);margin-bottom:4px;">🔮 剩下的原料照「大盒優先」還能再做 ${sum} 個</div>
+            ${m.length ? m.map(x => `<div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;"><span>${x.isCustom ? '✏️ ' : ''}${x.name}</span><b>${x.n}</b></div>`).join('') : '<div class="cap-sub">// 已經做不出任何一款了</div>'}
+            <div class="cap-sub" style="margin-top:4px;">// 下面是「單獨」做某一款最多能做幾個</div>
+        </div>`;
+    }
+    list.innerHTML = more + (rows.length ? rows.join('') : '<div class="plan-empty">// 尚無商品</div>');
 }
 
 let capRefreshTimer = null;
@@ -3170,12 +3459,22 @@ function calculate(brand) {
         fixedQty: parseInt(document.getElementById(`fixed-${p.id}-${brand}`).value)||0
     }));
 
-    const customActive = data.customProducts.map(p => ({ ...p }));
+    const customActive = data.customProducts.filter(p => p.currentPriority !== 'skip').map(p => ({ ...p }));
     const allActive = [...presetActive, ...customActive];
 
     const mixDetails = {};
     const mixWarnings = [];
     const isFlexMix = p => brand === 'le' && p.isMix;
+
+    // 盒子庫存上限：有輸入盒子庫存的盒型，生產數量不能超過剩下的盒子（沒輸入＝不限）
+    const boxLeft = {};
+    Object.entries(data.boxStocks || {}).forEach(([k, v]) => {
+        const n = parseFloat(v);
+        if (v !== '' && v != null && !isNaN(n)) boxLeft[k] = Math.max(0, n);
+    });
+    const boxKeyOf = p => p.boxTypeId || p.id;
+    const boxCap = p => boxLeft[boxKeyOf(p)] != null ? boxLeft[boxKeyOf(p)] : Infinity;
+    const boxUse = (p, q) => { const k = boxKeyOf(p); if (boxLeft[k] != null) boxLeft[k] = Math.max(0, boxLeft[k] - q); };
 
     const fixedActive = allActive.filter(p => p.fixedQty > 0);
     fixedActive.sort((a, b) => a.currentPriority - b.currentPriority);
@@ -3185,9 +3484,10 @@ function calculate(brand) {
             if (r.invalid) mixWarnings.push(p.name);
             if (r.perUnit) { p.req = r.perUnit; mixDetails[p.id] = r.perUnit; }
         }
-        const qty = isFlexMix(p) ? (mixDetails[p.id] ? Math.min(p.fixedQty, maxProducible(p, stocks)) : 0) : Math.min(p.fixedQty, maxProducible(p, stocks));
+        const qty = Math.min(boxCap(p), isFlexMix(p) ? (mixDetails[p.id] ? Math.min(p.fixedQty, maxProducible(p, stocks)) : 0) : Math.min(p.fixedQty, maxProducible(p, stocks)));
         if (qty > 0) {
             deductStock(p, qty, stocks);
+            boxUse(p, qty);
             const rev = qty * p.price;
             total += rev;
             plan.push({ id: p.id, name: p.name, qty, rev, label:`指定#${p.currentPriority}`, boxes: Math.floor(qty/p.boxSize), partial: qty%p.boxSize, boxSize: p.boxSize, isFixed:true, shortage: qty<p.fixedQty, isCustom: p.isCustom||false, boxTypeId: p.boxTypeId||null, boxStockUsage: qty });
@@ -3197,8 +3497,57 @@ function calculate(brand) {
     });
 
     const autoActive = allActive.filter(p => p.fixedQty <= 0);
+    const mode = data.allocMode || 'prio';
+    const pushAuto = (p, qty, label) => {
+        const rev = qty * p.price;
+        total += rev;
+        plan.push({ id: p.id, name: p.name, qty, rev, label, boxes: Math.floor(qty/p.boxSize), partial: qty%p.boxSize, boxSize: p.boxSize, isFixed:false, capped: qty%p.boxSize===0, isCustom: p.isCustom||false, boxTypeId: p.boxTypeId||null, boxStockUsage: qty });
+    };
+    // 某商品用目前剩的原料＋盒子最多還能做幾個（LE 綜合包會先算出每包配比）
+    const takeMax = p => {
+        if (isFlexMix(p)) {
+            const r = solveMix(p, stocks, Infinity);
+            if (r.invalid) mixWarnings.push(p.name);
+            const n = Math.min(r.n || 0, boxCap(p));
+            if (n > 0) { p.req = r.perUnit; mixDetails[p.id] = r.perUnit; }
+            return n;
+        }
+        return Math.min(maxProducible(p, stocks), boxCap(p));
+    };
+
+    if (mode === 'big' || mode === 'small') {
+        // 大盒優先／小盒優先：依顆數（LE 依重量）排序，同顆數再看優先度
+        const sorted = [...autoActive].sort((a, b) =>
+            (mode === 'big' ? pieceCount(b) - pieceCount(a) : pieceCount(a) - pieceCount(b)) || (a.currentPriority - b.currentPriority));
+        sorted.forEach(p => {
+            const qty = takeMax(p);
+            if (qty > 0) { deductStock(p, qty, stocks); boxUse(p, qty); pushAuto(p, qty, mode === 'big' ? '大盒優先' : '小盒優先'); }
+        });
+    } else if (mode === 'even') {
+        // 平均分配：同優先度的商品輪流一次做一箱，直到原料或盒子用完
+        const eg = {};
+        autoActive.forEach(p => { (eg[p.currentPriority] = eg[p.currentPriority] || []).push(p); });
+        Object.keys(eg).map(Number).sort((a,b)=>a-b).forEach(prio => {
+            const group = eg[prio], got = {};
+            let live = group.filter(p => !isFlexMix(p));
+            while (live.length) {
+                live = live.filter(p => {
+                    const step = p.boxSize || 1;
+                    if (maxProducible(p, stocks) < step || boxCap(p) < step) return false;
+                    deductStock(p, step, stocks); boxUse(p, step);
+                    got[p.id] = (got[p.id] || 0) + step;
+                    return true;
+                });
+            }
+            // LE 綜合包配比要另外算，用輪流後剩下的原料做
+            group.filter(isFlexMix).forEach(p => { const n = takeMax(p); if (n > 0) { deductStock(p, n, stocks); boxUse(p, n); got[p.id] = n; } });
+            group.forEach(p => { if (got[p.id] > 0) pushAuto(p, got[p.id], `平均#${prio}`); });
+        });
+    }
+    // mode === 'manual'：只做指定量，其餘不自動排
+
     const groups = {};
-    autoActive.forEach(p => {
+    if (mode === 'prio') autoActive.forEach(p => {
         if (!groups[p.currentPriority]) groups[p.currentPriority] = [];
         groups[p.currentPriority].push(p);
     });
@@ -3211,11 +3560,13 @@ function calculate(brand) {
             if (isFlexMix(p)) {
                 const r = solveMix(p, stocks, Infinity);
                 if (r.invalid) mixWarnings.push(p.name);
-                if (r.n > 0) {
+                const n = Math.min(r.n || 0, boxCap(p));
+                if (n > 0) {
                     p.req = r.perUnit;
                     mixDetails[p.id] = r.perUnit;
-                    deductStock(p, r.n, stocks);
-                    results[p.id] = r.n;
+                    deductStock(p, n, stocks);
+                    boxUse(p, n);
+                    results[p.id] = n;
                 }
                 return;
             }
@@ -3225,18 +3576,21 @@ function calculate(brand) {
                 if (perBox > 0) boxes = Math.min(boxes, Math.floor((stocks[ing]||0) / perBox));
             }
             boxes = isFinite(boxes) ? Math.max(0, boxes) : 0;
+            boxes = Math.min(boxes, Math.floor(boxCap(p) / p.boxSize));
             if (boxes > 0) {
                 const qty = p.boxSize * boxes;
                 deductStock(p, qty, stocks);
+                boxUse(p, qty);
                 results[p.id] = qty;
             }
         });
 
         group.forEach(p => {
             if (isFlexMix(p)) return;
-            const maxP = maxProducible(p, stocks);
+            const maxP = Math.min(maxProducible(p, stocks), boxCap(p));
             if (maxP > 0) {
                 deductStock(p, maxP, stocks);
+                boxUse(p, maxP);
                 results[p.id] = (results[p.id]||0) + maxP;
             }
         });
@@ -3252,8 +3606,15 @@ function calculate(brand) {
     });
 
     plan.forEach(it => { if (mixDetails[it.id]) it.mixDetail = mixDetails[it.id]; });
+    data.lastBoxLeft = { ...boxLeft };
+    // 記下指定量目標，給 04「分配後剩餘」顯示達成／不足
+    data.lastTargets = fixedActive.map(p => {
+        const got = plan.filter(x => x.id === p.id).reduce((a, x) => a + x.qty, 0);
+        return { id: p.id, name: p.name, isCustom: !!p.isCustom, target: p.fixedQty, got, req: { ...p.req }, boxKey: p.boxTypeId || p.id };
+    });
+    data.capMode = 'after';
     renderReport(stocks, plan, total, brand);
-    renderCapacity(brand);
+    setCapacityMode(brand, 'after');
     if (mixWarnings.length) {
         const banner = document.getElementById(`status-banner-${brand}`);
         banner.className = 'status-bar idle';
@@ -3686,7 +4047,7 @@ function exportCustomProductsToExcel(brand) {
         const recipeDesc = Object.entries(p.req)
             .map(([ing, qty]) => `#${ing}×${qty}`)
             .join(' ');
-        const prioText = p.currentPriority ? `第${p.currentPriority}` : '不生産';
+        const prioText = (p.currentPriority && p.currentPriority !== 'skip') ? `第${p.currentPriority}` : '不生産';
         const row = [
             p.name,
             p.price || 0,
@@ -3738,6 +4099,20 @@ let fbSaveTimer = null;
 let fbLastPushedJson = null;
 let fbPendingRemoteState = null;
 let fbInitialLoadDone = false;
+const DEVICE_ID = 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+// Firebase 會把 {1:..,2:..,3:..} 這種數字 key 的物件轉成陣列、也會刪掉空值，這裡還原
+function normalizeNumMap(v) {
+    const out = {};
+    if (!v || typeof v !== 'object') return out;
+    Object.entries(v).forEach(([k, val]) => { if (val != null) out[k] = val; });
+    return out;
+}
+function fbToArray(v) {
+    if (!v) return [];
+    if (Array.isArray(v)) return v.filter(x => x != null);
+    return Object.values(v).filter(x => x != null);
+}
 
 function isUserEditing() {
     const el = document.activeElement;
@@ -3787,7 +4162,7 @@ function initFirebaseSync() {
         }
         const json = JSON.stringify(remoteState);
         fbInitialLoadDone = true;
-        if (json === fbLastPushedJson) return; // 這是自己剛寫入的回音，不用重繪
+        if (json === fbLastPushedJson || remoteState._writer === DEVICE_ID) return; // 自己剛寫入的回音，不用重繪
         if (isUserEditing()) {
             fbPendingRemoteState = remoteState; // 先不要打斷正在輸入的欄位，等使用者編輯完再套用
             return;
@@ -3832,7 +4207,7 @@ function pushStateToFirebase(state, immediate) {
 
 
 function buildStateObject() {
-    const state = { currentBrand, brands: {} };
+    const state = { currentBrand, brands: {}, _writer: DEVICE_ID, _savedAt: Date.now() };
     ['lf','des','yt','le'].forEach(brand => {
         const data = BRAND_DATA[brand];
         const stocks = {};
@@ -3846,7 +4221,7 @@ function buildStateObject() {
             const fixedEl = document.getElementById(`fixed-${p.id}-${brand}`);
             presets[p.id] = { prio: prioEl?.value || 'skip', fixed: parseInt(fixedEl?.value) || 0, price: p.price || 0, box: p.boxSize || 1, req: p.req, reqOrder: p.reqOrder || null };
         });
-        const entry = { stocks, presets, customProducts: data.customProducts, customIdCounter: data.customIdCounter, customHistory: data.customHistory, lastImportTime: data.lastImportTime || null, boxStocks: data.boxStocks || {} };
+        const entry = { allocMode: data.allocMode || 'prio', madeLog: data.madeLog || [], madeDraft: data.madeDraft || {}, stocks, presets, customProducts: data.customProducts, customIdCounter: data.customIdCounter, customHistory: data.customHistory, lastImportTime: data.lastImportTime || null, boxStocks: data.boxStocks || {} };
         if (brand === 'le') {
             entry.lemMix = {};
             data.products.filter(p => p.isMix).forEach(p => { entry.lemMix[p.id] = { ...p.req }; });
@@ -3960,7 +4335,7 @@ function applyStateObject(state) {
                     const priceEl = document.getElementById(`price-${p.id}-${brand}`);
                     const boxEl = document.getElementById(`box-${p.id}-${brand}`);
                     if (prioEl) { prioEl.value = ps.prio; updateSelectStyle(p.id, brand); }
-                    if (fixedEl && ps.fixed) fixedEl.value = ps.fixed || '';
+                    if (fixedEl) fixedEl.value = ps.fixed || '';
                     if (ps.price != null) {
                         p.price = ps.price;
                         if (priceEl) priceEl.value = ps.price || '';
@@ -3971,8 +4346,8 @@ function applyStateObject(state) {
                     }
                     // 還原「預設商品」被點圖片替換過的原料配方（若有存過），並刷新該列顯示
                     if (ps.req) {
-                        p.req = ps.req;
-                        p.reqOrder = ps.reqOrder || null;
+                        p.req = normalizeNumMap(ps.req);
+                        p.reqOrder = ps.reqOrder ? fbToArray(ps.reqOrder) : null;
                         const cell = document.getElementById(`preset-recipe-${p.id}-${brand}`);
                         if (cell) cell.innerHTML = buildPresetRecipeCellHtml(p, brand);
                         const costEl = document.getElementById(`cost-${p.id}-${brand}`);
@@ -3983,18 +4358,23 @@ function applyStateObject(state) {
                     }
                 });
             }
-            if (saved.boxStocks) {
-                data.boxStocks = saved.boxStocks;
-            }
-            if (saved.customProducts) {
-                data.customProducts = saved.customProducts;
-                data.customIdCounter = saved.customIdCounter || 0;
-                renderCustomList(brand);
-            }
+            // Firebase 會丟掉空陣列/空物件，所以「不存在」= 已被清空，要一併同步清掉
+            data.boxStocks = normalizeNumMap(saved.boxStocks);
+            data.customProducts = fbToArray(saved.customProducts).map(cp => ({
+                ...cp,
+                req: normalizeNumMap(cp.req),
+                reqOrder: cp.reqOrder ? fbToArray(cp.reqOrder) : null,
+                boxTypeId: cp.boxTypeId || null,
+                fixedQty: cp.fixedQty || 0,
+            }));
+            data.customIdCounter = saved.customIdCounter || 0;
+            renderCustomList(brand);
             renderBoxStockGrid(brand);
-            if (saved.customHistory) {
-                data.customHistory = saved.customHistory;
-            }
+            data.customHistory = fbToArray(saved.customHistory).map(h => ({
+                ...h,
+                req: normalizeNumMap(h.req),
+                reqOrder: h.reqOrder ? fbToArray(h.reqOrder) : null,
+            }));
             if (brand === 'le' && saved.lemMix) {
                 data.products.filter(p => p.isMix).forEach(p => {
                     if (saved.lemMix[p.id]) {
@@ -4009,6 +4389,20 @@ function applyStateObject(state) {
                 });
             }
             if (brand === 'le') { try { renderLemMixTable(); } catch(e) {} }
+            data.madeLog = fbToArray(saved.madeLog).map(l => ({
+                ...l,
+                items: fbToArray(l.items),
+                ingDelta: normalizeNumMap(l.ingDelta),
+                boxDelta: normalizeNumMap(l.boxDelta),
+            }));
+            renderMadeLog(brand);
+            data.madeDraft = normalizeNumMap(saved.madeDraft);
+            data.allocMode = saved.allocMode || 'prio';
+            syncAllocModeUI(brand);
+            [...data.products, ...data.customProducts].forEach(p => {
+                const el = document.getElementById(`made-${p.id}-${brand}`);
+                if (el && el !== document.activeElement) el.value = data.madeDraft[p.id] || '';
+            });
             if (saved.lastImportTime) {
                 data.lastImportTime = saved.lastImportTime;
                 renderImportTimestamp(brand);
@@ -4049,7 +4443,7 @@ loadImageOverrides();
 });
 loadState();
 renderLemMixTable();
-ALL_BRANDS.forEach(b => { initCapacityCard(b); renderCapacity(b); });
+ALL_BRANDS.forEach(b => { initCapacityCard(b); renderCapacity(b); initMadeBar(b); renderMadeLog(b); initAllocMode(b); });
 renderLemCalc();
 initFirebaseSync();
 </script>

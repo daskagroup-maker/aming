@@ -3670,7 +3670,6 @@ function renderCapacity(brand) {
         const ok = data.lastTargets.filter(t => t.got >= t.target);
         const ng = data.lastTargets.filter(t => t.got < t.target);
         const okHtml = ok.map(t => `<div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;"><span>✅ ${t.isCustom ? '✏️ ' : ''}${t.name}</span><span>${t.got} / ${t.target}</span></div>`).join('');
-        const ngHtml = ng.map(t => `<div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--warn);margin-top:3px;"><span>⚠ ${t.isCustom ? '✏️ ' : ''}${t.name}</span><span>${t.got} / ${t.target}（還差 ${t.target - t.got} 個）</span></div>`).join('');
         // 原料 × 不足款 的需要量（用分配後剩下的庫存比）
         const ings = [];
         ng.forEach(t => Object.entries(t.req).forEach(([ing, q]) => { if (q > 0 && !ings.includes(ing)) ings.push(ing); }));
@@ -3688,6 +3687,14 @@ function renderCapacity(brand) {
             if (bl != null && diff > bl) boxRows.push({ name: `盒子（${t.name}）`, per: ng.map((_, j) => (j === i ? diff : 0)), tot: diff, left: bl, lack: diff - bl, u: '' });
         });
         const all = rows.concat(boxRows);
+        // 每款自己卡在哪些原料
+        const chips = ng.map((t, i) => all.filter(r => r.per[i] > 0).map(r => {
+            const solo = r.per[i] - r.left;
+            const others = ng.filter((_, j) => j !== i && r.per[j] > 0).map(x => x.name);
+            const txt = solo > 0 ? `${r.name.replace(/（.*）/, '')} 差${fmt2(solo)}${r.u}` : `${r.name} 跟 ${others.join('、')} 共用才不夠`;
+            const bg = solo > 0 ? 'var(--warn)' : '#b08900';
+            return `<span style="display:inline-block;margin:2px 4px 0 0;padding:1px 6px;border:1px solid ${bg};color:${bg};border-radius:3px;font-size:12px;">${txt}</span>`;
+        }).join(''));
         let table = '';
         if (ng.length && all.length) {
             const head = ng.map(t => `<th ${T}>${t.name}</th>`).join('');
@@ -3707,7 +3714,10 @@ function renderCapacity(brand) {
         }
         more += `<div style="border:1px solid ${ng.length ? 'var(--warn)' : 'var(--teal)'};border-radius:2px;padding:8px 10px;margin-bottom:10px;">
             <div style="font-family:var(--mono);font-size:12px;font-weight:700;margin-bottom:4px;">📋 指定量達成：${ok.length} 款 OK・${ng.length} 款不足</div>
-            ${okHtml}${ngHtml}${table}
+            ${okHtml}${ng.map((t, i) => `<div style="margin-top:6px;font-family:var(--mono);">
+                <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:var(--warn);"><span>⚠ ${t.isCustom ? '✏️ ' : ''}${t.name}</span><span>${t.got} / ${t.target}（還差 ${t.target - t.got} 個）</span></div>
+                <div style="font-size:12px;">卡在：${chips[i] || '<span class="cap-sub">原料被其他商品先用掉（調優先度）</span>'}</div>
+            </div>`).join('')}${table}
         </div>`;
     }
     if (data.capMode === 'after') more += `<div class="cap-sub" style="margin:4px 0;">// 下面是「單獨」做某一款最多能做幾個</div>`;

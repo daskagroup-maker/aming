@@ -3676,16 +3676,19 @@ function renderCapacity(brand) {
                 if (!(q > 0)) return;
                 need[ing] = (need[ing] || 0) + q * diff;
                 const lack = q * diff - (stocks[ing] || 0);
-                if (lack > 0) miss.push(`${ingLbl(ing, brand)} 需${fmt2(q * diff)}・剩${fmt2(stocks[ing] || 0)}・<b>差${fmt2(lack)}</b>${unit}`);
+                if (lack > 0) miss.push([ingLbl(ing, brand), fmt2(q * diff), fmt2(stocks[ing] || 0), fmt2(lack) + (unit || '')]);
             });
             const bl = (data.lastBoxLeft || {})[t.boxKey];
             if (bl != null) {
                 boxNeed[t.boxKey] = (boxNeed[t.boxKey] || 0) + diff;
-                if (diff > bl) miss.push(`盒子 需${diff}・剩${bl}・<b>差${diff - bl}</b>`);
+                if (diff > bl) miss.push(['盒子', diff, bl, diff - bl]);
             }
             return `<div style="font-family:var(--mono);font-size:11px;margin-top:3px;">
-                <div style="display:flex;justify-content:space-between;color:var(--warn);"><span>⚠ ${t.isCustom ? '✏️ ' : ''}${t.name}</span><span>${t.got} / ${t.target}（差 ${diff}）</span></div>
-                <div class="cap-sub">缺：${miss.length ? miss.join('、') : '原料被其他商品用掉了（調優先度）'}</div>
+                <div style="display:flex;justify-content:space-between;color:var(--warn);font-size:13px;font-weight:700;"><span>⚠ ${t.isCustom ? '✏️ ' : ''}${t.name}</span><span>${t.got} / ${t.target}（差 ${diff}）</span></div>
+                ${miss.length ? `<table style="width:100%;border-collapse:collapse;margin-top:4px;font-family:var(--mono);font-size:13px;">
+                    <tr style="color:var(--muted,#888);font-size:11px;"><th style="text-align:left;padding:2px 4px;">缺</th><th style="text-align:right;padding:2px 4px;">需要</th><th style="text-align:right;padding:2px 4px;">剩下</th><th style="text-align:right;padding:2px 4px;">差</th></tr>
+                    ${miss.map(([n, a, b, c]) => `<tr style="border-top:1px solid rgba(128,128,128,.25);"><td style="padding:3px 4px;font-weight:700;">${n}</td><td style="text-align:right;padding:3px 4px;">${a}</td><td style="text-align:right;padding:3px 4px;">${b}</td><td style="text-align:right;padding:3px 4px;color:var(--warn);font-weight:700;">${c}</td></tr>`).join('')}
+                </table>` : `<div class="cap-sub" style="font-size:12px;">原料被其他商品用掉了（調優先度）</div>`}
             </div>`;
         });
         const totalMiss = Object.entries(need).map(([ing, q]) => [ing, q - (stocks[ing] || 0)]).filter(([, l]) => l > 0)

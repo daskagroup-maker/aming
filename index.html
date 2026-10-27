@@ -2322,7 +2322,8 @@ function renderBoxStockGrid(brand) {
 }
 
 function updateBoxStockValue(pid, brand, val) {
-    BRAND_DATA[brand].boxStocks[pid] = parseInt(val) || 0;
+    if (val === '' || val == null || isNaN(parseInt(val))) delete BRAND_DATA[brand].boxStocks[pid]; // 空白 = 無限制
+    else BRAND_DATA[brand].boxStocks[pid] = parseInt(val);
     renderCustomList(brand);
     saveState();
 }
@@ -3675,12 +3676,12 @@ function renderCapacity(brand) {
                 if (!(q > 0)) return;
                 need[ing] = (need[ing] || 0) + q * diff;
                 const lack = q * diff - (stocks[ing] || 0);
-                if (lack > 0) miss.push(`${ingLbl(ing, brand)} ×${fmt2(lack)}${unit}`);
+                if (lack > 0) miss.push(`${ingLbl(ing, brand)} 需${fmt2(q * diff)}・剩${fmt2(stocks[ing] || 0)}・<b>差${fmt2(lack)}</b>${unit}`);
             });
             const bl = (data.lastBoxLeft || {})[t.boxKey];
             if (bl != null) {
                 boxNeed[t.boxKey] = (boxNeed[t.boxKey] || 0) + diff;
-                if (diff > bl) miss.push(`盒子 ×${diff - bl}`);
+                if (diff > bl) miss.push(`盒子 需${diff}・剩${bl}・<b>差${diff - bl}</b>`);
             }
             return `<div style="font-family:var(--mono);font-size:11px;margin-top:3px;">
                 <div style="display:flex;justify-content:space-between;color:var(--warn);"><span>⚠ ${t.isCustom ? '✏️ ' : ''}${t.name}</span><span>${t.got} / ${t.target}（差 ${diff}）</span></div>
@@ -3878,6 +3879,7 @@ function calculate(brand) {
         return { id: p.id, name: p.name, isCustom: !!p.isCustom, target: p.fixedQty, got, req: { ...p.req }, boxKey: p.boxTypeId || p.id };
     });
     data.capMode = 'after';
+    data.morePlan = {}; // 重新分配後清掉舊的「自己安排」數量，避免扣到新的剩餘庫存
     renderReport(stocks, plan, total, brand);
     setCapacityMode(brand, 'after');
     if (mixWarnings.length) {
